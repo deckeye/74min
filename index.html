@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>74min | Share Your Mix</title>
+    
+    <!-- Google Fonts: Outfit for that modern, premium feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;600;800&family=Reenie+Beanie&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header class="main-header">
+            <h1 class="logo">74min</h1>
+            <nav>
+                <button class="btn-icon">Login</button>
+            </nav>
+        </header>
+
+        <main class="workspace">
+            <!-- The CD-R visual will be injected here or live here -->
+            <section id="cd-stage" class="cd-stage">
+                <div class="cd-container" id="cd-visual">
+                    <!-- CD Structure controlled by CSS/JS -->
+                    <div class="cd-disc">
+                        <div class="cd-surface"></div>
+                        <div class="cd-label">
+                            <span class="handwritten" id="playlist-title">Untitled Mix</span>
+                        </div>
+                        <div class="cd-hole"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Playlist/Timeline Editor -->
+            <section class="editor-panel">
+                <div class="timeline-header">
+                    <h2>Tracklist</h2>
+                    <div class="time-readout"><span id="current-time">00:00</span> / 74:00</div>
+                </div>
+                <div class="timeline-bar-container">
+                    <div class="timeline-bar" id="timeline-bar"></div>
+                </div>
+                
+                <div class="track-list" id="track-list">
+                    <!-- Tracks go here -->
+                </div>
+
+                <div class="add-track-area">
+                    <button id="add-track-btn" class="btn-primary">Connect Service (+)</button>
+                    <div class="service-icons">
+                        <span class="icon">YT</span>
+                        <span class="icon">SC</span>
+                        <span class="icon">AM</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
