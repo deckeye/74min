@@ -191,6 +191,8 @@ body {
     flex-direction: column;
     gap: 1.5rem;
     box-shadow: var(--glass-shadow);
+    overflow: hidden; /* Force children to stay inside */
+    min-height: 0; /* Allow flex child to shrink below content size */
 }
 
 .timeline-header {
