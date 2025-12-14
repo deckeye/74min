@@ -217,6 +217,7 @@ body {
 
 .track-list {
     flex: 1;
+    min-height: 0; /* flexboxで子要素がコンテナをはみ出さないようにする */
     overflow-y: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     padding-top: 1rem;
