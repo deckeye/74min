@@ -16,7 +16,7 @@
 ## デプロイ
 現在、以下の環境で稼働しています。
 
-- **URL**: `https://74min.vercel.app` (予定)
+- **URL**: `https://74min.vercel.app`
 - **Platform**: Vercel (Static)
 - **Status**: Beta
 
