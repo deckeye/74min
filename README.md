@@ -13,6 +13,16 @@
   - 各ストリーミングサービス（YouTube, Spotify等）の横断
   - Supabaseによるリアルタイム共有
 
+## デプロイ
+現在、以下の環境で稼働しています。
+
+- **URL**: `https://74min.vercel.app` (予定)
+- **Platform**: Vercel (Static)
+- **Status**: Beta
+
+> [!NOTE]
+> デプロイ先やURLは開発状況により変更される可能性があります。最新情報は本リポジトリをご確認ください。
+
 ## スタートガイド
 本プロジェクトは外部ビルドツール（Webpack/Vite等）を必要としません。
 
