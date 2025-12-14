@@ -1,0 +1,41 @@
+# Tasks: 74min - Social Playlist Service
+
+- [x] Project Initialization <!-- id: 0 -->
+    - [x] Create `implementation_plan.md` <!-- id: 1 -->
+    - [x] Create `index.html`, `style.css`, `app.js` <!-- id: 2 -->
+    - [x] Setup modern CSS reset and variable system <!-- id: 3 -->
+- [x] Core UI Implementation <!-- id: 4 -->
+    - [x] Create "Hero" CD-R Visual Component <!-- id: 5 -->
+        - [x] CSS-only CD-R design (Reflective layers, center hole, writing area) <!-- id: 6 -->
+        - [x] Spinning animation / Interactive tilt <!-- id: 7 -->
+    - [x] Create "Playlist Editor" Interface <!-- id: 8 -->
+        - [x] Timeline visualization (0-74 mins) <!-- id: 9 -->
+        - [x] Drag & Drop simulation (or click to add) <!-- id: 10 -->
+        - [x] Track item visuals (Service icons: YT, SC, etc.) <!-- id: 11 -->
+    - [x] Create "Player/Sharing" View <!-- id: 12 -->
+        - [x] Playback controls (Visual only) <!-- id: 13 -->
+        - [x] Social reaction buttons (Like part of track) <!-- id: 14 -->
+- [x] Polish & Responsiveness <!-- id: 15 -->
+    - [x] Mobile layout adjustments <!-- id: 16 -->
+    - [x] Micro-animations (Hover states, transitions) <!-- id: 17 -->
+- [x] Final Review <!-- id: 18 -->
+    - [x] Verify 74-minute constraint logic <!-- id: 19 -->
+    - [x] Walkthrough creation <!-- id: 20 -->
+- [x] Deployment Setup <!-- id: 21 -->
+    - [x] Create Deployment Workflow Guide (`.agent/workflows/deploy_web.md`) <!-- id: 22 -->
+    - [x] Initialize Git Repository <!-- id: 23 -->
+    - [x] Create `.gitignore` <!-- id: 24 -->
+- [x] Supabase Backend Integration <!-- id: 25 -->
+    - [x] Design database schema (Playlists, Tracks, Users) <!-- id: 26 -->
+    - [x] Create Supabase project setup guide <!-- id: 27 -->
+    - [x] Install Supabase client library <!-- id: 28 -->
+    - [x] Update app.js with Supabase integration <!-- id: 29 -->
+    - [x] Implement playlist CRUD operations <!-- id: 30 -->
+    - [ ] Add authentication UI <!-- id: 31 -->
+- [x] Bug Fix: トラックリストのスクロール問題 <!-- id: 32 -->
+    - [x] GitHub issue作成 (#1) <!-- id: 33 -->
+    - [x] Feature branchの作成 (`fix/track-list-overflow`) <!-- id: 34 -->
+    - [x] CSS修正: `.track-list`に`min-height: 0`を追加 <!-- id: 35 -->
+    - [x] 動作確認 <!-- id: 36 -->
+    - [x] コミット（日本語メッセージ） <!-- id: 37 -->
+    - [x] mainブランチへマージ <!-- id: 38 -->
