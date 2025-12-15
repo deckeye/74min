@@ -66,6 +66,24 @@
                 </div>
             </section>
         </main>
+        <!-- Search Modal -->
+        <div id="search-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <header class="modal-header">
+                    <h2>Add Track</h2>
+                    <button id="close-modal" class="btn-icon">×</button>
+                </header>
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Search for songs or paste URL...">
+                </div>
+                <div class="search-results" id="search-results">
+                    <!-- Results injected here -->
+                    <div class="empty-state">
+                        Type to search...
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="js/supabase-client.js"></script>

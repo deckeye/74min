@@ -35,12 +35,36 @@ const playlistTitle = document.getElementById('playlist-title');
 const trackListEl = document.getElementById('track-list');
 const addBtn = document.getElementById('add-track-btn');
 
+const modalOverlay = document.getElementById('search-modal');
+const closeModalBtn = document.getElementById('close-modal');
+const searchInput = document.getElementById('search-input');
+const searchResultsEl = document.getElementById('search-results');
+
+// Expanded Mock Database
+const DATABASE_TRACKS = [
+    ...MOCK_TRACKS,
+    { title: "Harder, Better, Faster, Stronger", artist: "Daft Punk", duration: 224, service: "SP" },
+    { title: "Something About Us", artist: "Daft Punk", duration: 231, service: "SP" },
+    { title: "Genesis", artist: "Justice", duration: 233, service: "YT" },
+    { title: "D.A.N.C.E.", artist: "Justice", duration: 242, service: "YT" },
+    { title: "Safe and Sound", artist: "Justice", duration: 346, service: "YT" },
+    { title: "Teardrop", artist: "Massive Attack", duration: 331, service: "AM" },
+    { title: "Unfinished Sympathy", artist: "Massive Attack", duration: 315, service: "AM" },
+    { title: "Royals", artist: "Lorde", duration: 190, service: "SP" },
+    { title: "Team", artist: "Lorde", duration: 193, service: "SP" }
+];
+
 // Initialize
 async function init() {
     updateUI();
 
     // Event Listeners
-    if (addBtn) addBtn.addEventListener('click', addRandomTrack);
+    if (addBtn) addBtn.addEventListener('click', () => openModal());
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+    if (modalOverlay) modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+    });
+    if (searchInput) searchInput.addEventListener('input', handleSearch);
     document.addEventListener('mousemove', handleMouseMove);
 
     // Toggle play on CD click
@@ -122,7 +146,8 @@ function togglePlay() {
 }
 
 async function addRandomTrack() {
-    const track = MOCK_TRACKS[Math.floor(Math.random() * MOCK_TRACKS.length)];
+    // Clone the object to ensure unique references
+    const track = { ...MOCK_TRACKS[Math.floor(Math.random() * MOCK_TRACKS.length)] };
 
     if (state.totalTime + track.duration > state.maxTime) {
         alert("Disc Full! 74min limit reached.");
@@ -181,12 +206,15 @@ async function saveTrackToSupabase(track) {
                 duration: track.duration,
                 service: track.service,
                 position: state.tracks.length
-            });
+            })
+            .select() // Select the inserted row to get ID
+            .single();
 
         if (error) {
             console.error('Error saving track:', error);
-        } else {
-            console.log('✅ Saved track to Supabase');
+        } else if (data) {
+            track.id = data.id; // Save ID for deletion
+            console.log('✅ Saved track to Supabase, ID:', track.id);
         }
 
         // Update playlist total duration
@@ -200,6 +228,41 @@ async function saveTrackToSupabase(track) {
     }
 }
 
+
+
+async function deleteTrack(track) {
+    if (!confirm(`Delete "${track.title}"?`)) return; // Optional confirmation
+
+    // 1. Remove from State
+    const index = state.tracks.indexOf(track);
+    if (index > -1) {
+        state.tracks.splice(index, 1);
+        state.totalTime -= track.duration;
+    }
+
+    // 2. Remove from Supabase (if ID exists)
+    if (track.id && window.supabaseClient?.client) {
+        const supabase = window.supabaseClient.client;
+        supabase.from('tracks').delete().eq('id', track.id).then(({ error }) => {
+            if (error) console.error('Error deleting from DB:', error);
+            else console.log('Deleted from DB');
+        });
+
+        // Update playlist duration in DB
+        if (state.currentPlaylistId) {
+            supabase.from('playlists')
+                .update({ total_duration: state.totalTime })
+                .eq('id', state.currentPlaylistId);
+        }
+    }
+
+    // 3. Update UI
+    // Re-render entire list to ensure order/stats are correct
+    trackListEl.innerHTML = '';
+    state.tracks.forEach(t => renderTrack(t)); // Pass original track refs
+    updateUI();
+}
+
 function renderTrack(track) {
     const el = document.createElement('div');
     el.className = 'track-item';
@@ -211,8 +274,18 @@ function renderTrack(track) {
         <div class="track-right">
             <span class="service-tag" style="margin-right:8px; font-size:0.7em; opacity:0.7">${track.service}</span>
             <span class="duration">${formatTime(track.duration)}</span>
+            <button class="btn-delete" aria-label="Delete">×</button>
         </div>
     `;
+
+    // Attach delete event
+    const deleteBtn = el.querySelector('.btn-delete');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteTrack(track);
+        });
+    }
     trackListEl.appendChild(el);
     trackListEl.scrollTop = trackListEl.scrollHeight;
 }
@@ -255,6 +328,95 @@ function updateUI() {
     }
 
     if (currentTimeEl) currentTimeEl.textContent = formatTime(state.totalTime);
+}
+
+function openModal() {
+    modalOverlay.classList.remove('hidden');
+    searchInput.focus();
+    renderSearchResults(''); // Show all or empty
+}
+
+function closeModal() {
+    modalOverlay.classList.add('hidden');
+    searchInput.value = '';
+}
+
+function handleSearch(e) {
+    const query = e.target.value.toLowerCase();
+    renderSearchResults(query);
+}
+
+function renderSearchResults(query) {
+    searchResultsEl.innerHTML = '';
+
+    if (!query) {
+        // Option A: Show nothing
+        // searchResultsEl.innerHTML = '<div class="empty-state">Type to search...</div>';
+
+        // Option B: Show recommendations (random 5)
+        const recommendations = DATABASE_TRACKS.slice(0, 5);
+        recommendations.forEach(track => renderResultItem(track));
+        return;
+    }
+
+    const filtered = DATABASE_TRACKS.filter(t =>
+        t.title.toLowerCase().includes(query) ||
+        t.artist.toLowerCase().includes(query)
+    );
+
+    if (filtered.length === 0) {
+        searchResultsEl.innerHTML = '<div class="empty-state">No tracks found.</div>';
+        return;
+    }
+
+    filtered.forEach(track => renderResultItem(track));
+}
+
+function renderResultItem(track) {
+    const el = document.createElement('div');
+    el.className = 'result-item';
+    el.innerHTML = `
+        <div class="result-info">
+            <h4>${track.title}</h4>
+            <p>${track.artist} • ${formatTime(track.duration)}</p>
+        </div>
+        <button class="btn-add">+</button>
+    `;
+
+    el.querySelector('.btn-add').addEventListener('click', () => {
+        addTrackFromSearch(track);
+    });
+
+    searchResultsEl.appendChild(el);
+}
+
+async function addTrackFromSearch(trackTemplate) {
+    // Logic similar to addRandomTrack but with specific track
+    const track = { ...trackTemplate };
+
+    if (state.totalTime + track.duration > state.maxTime) {
+        alert("Disc Full! 74min limit reached.");
+        return;
+    }
+
+    // If Supabase is available, save to DB
+    if (isSupabaseReady) {
+        await saveTrackToSupabase(track);
+    }
+
+    state.tracks.push(track);
+    state.totalTime += track.duration;
+
+    renderTrack(track); // Add to main list
+    updateUI();
+    animateCDAction();
+
+    // Auto-play checks
+    if (!state.isPlaying) togglePlay();
+
+    // Close modal? Maybe keep open for multi-add. 
+    // Let's close for now to be simple.
+    closeModal();
 }
 
 init();
