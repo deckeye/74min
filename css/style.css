@@ -181,7 +181,10 @@ body {
 /* --- Editor Panel --- */
 .editor-panel {
     width: 400px;
-    height: 80%;
+    height: auto;
+    /* Let content dictate size up to max-height */
+    max-height: 70vh;
+    /* Strict viewport limit */
     background: var(--bg-panel);
     backdrop-filter: blur(12px);
     border: var(--glass-border);
@@ -191,14 +194,18 @@ body {
     flex-direction: column;
     gap: 1.5rem;
     box-shadow: var(--glass-shadow);
-    overflow: hidden; /* Force children to stay inside */
-    min-height: 0; /* Allow flex child to shrink below content size */
+    overflow: hidden;
+    /* Force children to stay inside */
+    min-height: 0;
+    /* Allow flex child to shrink below content size */
 }
 
 .timeline-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    flex-shrink: 0;
+    /* Prevent shrinking */
 }
 
 .timeline-bar-container {
@@ -206,6 +213,8 @@ body {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
     overflow: hidden;
+    flex-shrink: 0;
+    /* Prevent shrinking */
 }
 
 .timeline-bar {
@@ -219,7 +228,8 @@ body {
 
 .track-list {
     flex: 1;
-    min-height: 0; /* flexboxで子要素がコンテナをはみ出さないようにする */
+    min-height: 0;
+    /* flexboxで子要素がコンテナをはみ出さないようにする */
     overflow-y: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     padding-top: 1rem;
@@ -280,7 +290,11 @@ body {
 
 .add-track-area {
     margin-top: auto;
+    flex-shrink: 0;
+    /* Prevent shrinking/being pushed out */
     text-align: center;
+    padding-bottom: 0.5rem;
+    /* Ensure some spacing from bottom edge */
 }
 
 .btn-primary {
