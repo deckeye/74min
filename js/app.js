@@ -5,6 +5,9 @@ console.log('74min Initializing...');
 // Initialize Supabase
 const isSupabaseReady = window.supabaseClient?.init();
 
+// Import Config
+import { CONFIG } from './config.js';
+
 // Simple state
 const state = {
     tracks: [],
@@ -59,6 +62,9 @@ async function init() {
     updateUI();
 
     // Event Listeners
+    const clearAllBtn = document.getElementById('clear-all-btn');
+    if (clearAllBtn) clearAllBtn.addEventListener('click', deleteAllTracks);
+
     if (addBtn) addBtn.addEventListener('click', () => openModal());
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
     if (modalOverlay) modalOverlay.addEventListener('click', (e) => {
@@ -230,6 +236,46 @@ async function saveTrackToSupabase(track) {
 
 
 
+async function deleteAllTracks() {
+    if (state.tracks.length === 0) return;
+    if (!confirm('Are you sure you want to empty the disc? This will delete all tracks.')) return;
+
+    // 1. Clear State
+    const previousTracks = [...state.tracks]; // Backup just in case (though we don't have undo yet)
+    state.tracks = [];
+    state.totalTime = 0;
+
+    // 2. Clear Supabase
+    if (state.currentPlaylistId && window.supabaseClient?.client) {
+        const supabase = window.supabaseClient.client;
+        try {
+            const { error } = await supabase
+                .from('tracks')
+                .delete()
+                .eq('playlist_id', state.currentPlaylistId);
+
+            if (error) {
+                console.error('Error deleting all tracks:', error);
+                // Optional: restore state if critical failure, but for now just log
+            } else {
+                console.log('All tracks deleted from DB');
+
+                // Reset playlist duration
+                await supabase
+                    .from('playlists')
+                    .update({ total_duration: 0 })
+                    .eq('id', state.currentPlaylistId);
+            }
+        } catch (err) {
+            console.error('Supabase error during bulk delete:', err);
+        }
+    }
+
+    // 3. Update UI
+    trackListEl.innerHTML = '';
+    updateUI();
+}
+
 async function deleteTrack(track) {
     if (!confirm(`Delete "${track.title}"?`)) return; // Optional confirmation
 
@@ -341,44 +387,159 @@ function closeModal() {
     searchInput.value = '';
 }
 
+// Debounce timer
+let searchTimeout;
+
 function handleSearch(e) {
-    const query = e.target.value.toLowerCase();
-    renderSearchResults(query);
+    const query = e.target.value;
+
+    // Clear previous timeout
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    // Debounce API calls (500ms)
+    searchTimeout = setTimeout(() => {
+        if (!query) {
+            renderSearchResults('');
+            return;
+        }
+        searchYouTube(query);
+    }, 500);
 }
 
-function renderSearchResults(query) {
-    searchResultsEl.innerHTML = '';
-
-    if (!query) {
-        // Option A: Show nothing
-        // searchResultsEl.innerHTML = '<div class="empty-state">Type to search...</div>';
-
-        // Option B: Show recommendations (random 5)
-        const recommendations = DATABASE_TRACKS.slice(0, 5);
-        recommendations.forEach(track => renderResultItem(track));
+async function searchYouTube(query) {
+    if (!CONFIG.YOUTUBE_API_KEY) {
+        console.warn('No YouTube API Key configured.');
+        // Fallback to mock search
+        renderSearchResults(query.toLowerCase(), true);
         return;
     }
 
+    try {
+        const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${CONFIG.YOUTUBE_API_KEY}`
+        );
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error?.message || 'API Error');
+        }
+
+        const data = await response.json();
+
+        // Convert to internal track format
+        const tracks = data.items.map(item => ({
+            title: item.snippet.title,
+            artist: item.snippet.channelTitle,
+            duration: 0, // YouTube Search API doesn't return duration. Requires separate 'videos' call. We'll set 0 or fetch details later.
+            // For prototype: random duration or placeholder '??:??'
+            // Actually, let's fetch details to be proper, OR just estimate for now to save quota.
+            // Let's use 0 and handle it in UI? Or better, fetch details.
+            // To save quota (search=100 units), we can skip details (video=1 unit). 
+            // But we need duration for the CD limit.
+            // Let's assume user accepts 0 or we do a second call.
+            // For this step, I'll fetch details for the IDs found.
+            id: item.id.videoId, // Temporary ID holder
+            service: 'YT',
+            thumbnail: item.snippet.thumbnails.default.url
+        }));
+
+        // Fetch details to get duration
+        await fetchTrackDetails(tracks);
+
+        renderSearchResultsWithData(tracks);
+
+    } catch (err) {
+        console.error('YouTube Search Error:', err);
+        searchResultsEl.innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
+    }
+}
+
+async function fetchTrackDetails(tracks) {
+    if (tracks.length === 0) return;
+    const ids = tracks.map(t => t.id).join(',');
+
+    try {
+        const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${CONFIG.YOUTUBE_API_KEY}`
+        );
+        const data = await response.json();
+
+        // Map duration back to tracks
+        data.items.forEach(item => {
+            const track = tracks.find(t => t.id === item.id);
+            if (track) {
+                track.duration = parseISO8601Duration(item.contentDetails.duration);
+            }
+        });
+    } catch (e) {
+        console.error('Details fetch error', e);
+    }
+}
+
+function parseISO8601Duration(duration) {
+    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+    if (!match) return 0;
+
+    const hours = (parseInt(match[1]) || 0);
+    const minutes = (parseInt(match[2]) || 0);
+    const seconds = (parseInt(match[3]) || 0);
+
+    return hours * 3600 + minutes * 60 + seconds;
+}
+
+function renderSearchResultsWithData(tracks) {
+    searchResultsEl.innerHTML = '';
+    if (tracks.length === 0) {
+        searchResultsEl.innerHTML = '<div class="empty-state">No tracks found.</div>';
+        return;
+    }
+    tracks.forEach(track => renderResultItem(track));
+}
+
+function renderSearchResults(query, isMock = false) {
+    if (isMock) {
+        // ... existing mock logic ...
+        fallbackMockSearch(query);
+    } else {
+        // Initial state or clear
+        searchResultsEl.innerHTML = '';
+        if (!query) {
+            const recommendations = DATABASE_TRACKS.slice(0, 5);
+            recommendations.forEach(track => renderResultItem(track));
+        }
+    }
+}
+
+function fallbackMockSearch(query) {
+    searchResultsEl.innerHTML = '';
     const filtered = DATABASE_TRACKS.filter(t =>
         t.title.toLowerCase().includes(query) ||
         t.artist.toLowerCase().includes(query)
     );
-
     if (filtered.length === 0) {
-        searchResultsEl.innerHTML = '<div class="empty-state">No tracks found.</div>';
+        searchResultsEl.innerHTML = '<div class="empty-state">No tracks found (Mock).</div>';
         return;
     }
-
     filtered.forEach(track => renderResultItem(track));
 }
 
 function renderResultItem(track) {
     const el = document.createElement('div');
     el.className = 'result-item';
+
+    // Thumbnail check
+    let iconOrImg = `<span class="service-icon">${track.service || 'MOCK'}</span>`;
+    if (track.thumbnail) {
+        iconOrImg = `<img src="${track.thumbnail}" class="result-thumb" alt="art">`;
+    }
+
     el.innerHTML = `
-        <div class="result-info">
-            <h4>${track.title}</h4>
-            <p>${track.artist} • ${formatTime(track.duration)}</p>
+        <div class="result-left">
+            ${iconOrImg}
+            <div class="result-info">
+                <h4>${track.title}</h4>
+                <p>${track.artist} • ${formatTime(track.duration)}</p>
+            </div>
         </div>
         <button class="btn-add">+</button>
     `;

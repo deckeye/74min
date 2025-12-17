@@ -3,7 +3,7 @@
 74min（ナナヨン）へようこそ。
 本サービスは、かつてのCD-R（最大録音時間74分）へのオマージュを込めた、プレイリスト作成・共有プラットフォームです。
 
-![Concept](https://github.com/deckeye/74min/assets/concept.png)
+<!-- ![Concept](https://github.com/deckeye/74min/assets/concept.png) -->
 
 ## プロジェクト概要
 - **コンセプト**: 74分の制限の中で「自分だけのベスト盤」を作る
@@ -25,6 +25,12 @@
 
 ## スタートガイド
 本プロジェクトは外部ビルドツール（Webpack/Vite等）を必要としません。
+
+### 開発環境 (Development)
+**Local Server URL**: [http://localhost:8080](http://localhost:8080)
+
+1. `python3 -m http.server 8080`
+2. ブラウザでアクセス
 
 1. **起動**: `index.html` をブラウザで開くだけ
 2. **開発**: VS Code Live Server推奨
