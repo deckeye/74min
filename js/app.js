@@ -277,7 +277,7 @@ async function deleteAllTracks() {
 }
 
 async function deleteTrack(track) {
-    if (!confirm(`Delete "${track.title}"?`)) return; // Optional confirmation
+    // Confirmation dialog removed per Issue #18
 
     // 1. Remove from State
     const index = state.tracks.indexOf(track);
