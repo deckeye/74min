@@ -949,24 +949,32 @@ body.light-mode .cd-container {
 
 .btn-subtle {
     font-size: 0.9rem;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-muted);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    /* わずかに明るく */
+    color: var(--accent-primary);
+    /* アクセントカラーを適用して視認性向上 */
+    border: 1px solid rgba(0, 242, 255, 0.2);
+    /* アクセントカラーのボーダー */
     width: 32px;
     height: 32px;
     border-radius: 50%;
     cursor: pointer;
-    margin-right: 1rem;
-    transition: all 0.2s;
+    margin-right: 1.5rem;
+    /* 間隔を少し広げる */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0.6;
+    /* 通常時は少し透過させることで「目立たせない」 */
 }
 
 .btn-subtle:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border-color: rgba(255, 255, 255, 0.3);
+    opacity: 1;
+    /* ホバーでくっきり表示 */
+    background: rgba(0, 242, 255, 0.15);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
 .about-content {
