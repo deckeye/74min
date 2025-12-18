@@ -9,6 +9,7 @@ description: 74minプロジェクトにおけるAIエージェントの標準動
 > 1. **Issue First**: GitHub Issue および `docs/issues/` ドキュメントがない状態でのコード修正は**厳禁**です。
 > 2. **Feature Branch Only**: `main` ブランチへの直接コミットは**禁止**です。必ず `feat/` や `fix/` ブランチを切って作業し、完了後にマージしてください。
 > 3. **Dual Recording**: GitHub とローカルの両方への記録は必須です。
+> 4. **Always Japanese**: 全ての会話、コミットメッセージ、Issue、ドキュメント生成は**常に日本語**で行ってください。英語での応答やファイル生成は原則禁止です。
 
 ## 1. 準備フェーズ (Preparation)
 - [ ] **Issueのデュアル作成**: 
@@ -35,7 +36,8 @@ description: 74minプロジェクトにおけるAIエージェントの標準動
     - `gh issue list --state open` (GitHub上のIssueの存在確認)
     - `ls docs/issues/` (ローカルファイルの存在確認)
     - `git log -n 5` (コミットメッセージにIssue番号が含まれているか確認)
-- [ ] **デュアル報告**:
+- [ ] **デュアル報告とデプロイURL提示**:
     - ユーザーへの最終報告には、必ず **GitHub Issueへのリンク** と **ローカルファイルへのリンク** の両方を含めること。
+    - また、**本番環境のデプロイURL (https://74min.vercel.app)** を明記し、ユーザーが即座に確認できるようにすること。
 
 // turbo-all
