@@ -31,6 +31,7 @@
                 <button id="atmo-toggle" class="btn-toggle-light">Atmosphere: Cyber</button>
                 <button id="media-toggle" class="btn-toggle-light">Media: CD</button>
                 <button id="toggle-light-btn" class="btn-toggle-light">Light Mode</button>
+                <button id="about-btn" class="btn-subtle" title="About 74min">?</button>
                 <button class="btn-icon">Login</button>
             </nav>
         </header>
@@ -168,6 +169,36 @@
                     <div class="empty-state">
                         Type to search...
                     </div>
+                </div>
+            </div>
+        </div>
+        <!-- About Modal -->
+        <div id="about-modal" class="modal-overlay hidden">
+            <div class="modal-content about-content">
+                <header class="modal-header">
+                    <h2>About 74min</h2>
+                    <button id="close-about-modal" class="btn-icon">×</button>
+                </header>
+                <div class="about-body">
+                    <section style="margin-bottom: 1.5rem;">
+                        <h3 style="color: var(--accent-primary); font-size: 1.1rem; margin-bottom: 0.5rem;">Concept</h3>
+                        <p style="font-size: 0.9rem; line-height: 1.6; color: #ddd;">
+                            74min（ナナヨン）は、かつてのCD-R（最大録音時間74分）へのオマージュを込めた、プレイリスト作成・共有プラットフォームです。制限の中で「自分だけのベスト盤」を作る体験を現代のストリーミングで再現します。
+                        </p>
+                    </section>
+                    <section style="margin-bottom: 1.5rem;">
+                        <h3 style="color: var(--accent-primary); font-size: 1.1rem; margin-bottom: 0.5rem;">Design</h3>
+                        <p style="font-size: 0.9rem; line-height: 1.6; color: #ddd;">Y2K / Glassmorphism / Cyberpunk
+                            を融合させた、少し懐かしくも新しいインターフェースを目指しています。右上のメニューから雰囲気を切り替えることも可能です。</p>
+                    </section>
+                    <section>
+                        <h3 style="color: var(--accent-primary); font-size: 1.1rem; margin-bottom: 0.5rem;">Credits</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">© 2025 74min
+                            Project / Deckeye</p>
+                        <p><a href="https://github.com/deckeye/74min" target="_blank" class="github-link"
+                                style="color: var(--accent-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 600;">Source
+                                Code (GitHub) →</a></p>
+                    </section>
                 </div>
             </div>
         </div>

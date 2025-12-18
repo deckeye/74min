@@ -197,6 +197,10 @@ const closeModalBtn = document.getElementById('close-modal');
 const searchInput = document.getElementById('search-input');
 const searchResultsEl = document.getElementById('search-results');
 
+const aboutBtn = document.getElementById('about-btn');
+const aboutModal = document.getElementById('about-modal');
+const closeAboutModalBtn = document.getElementById('close-about-modal');
+
 // Expanded Mock Database
 const DATABASE_TRACKS = [
     ...MOCK_TRACKS,
@@ -253,6 +257,15 @@ async function init() {
         }
         if (searchInput) searchInput.addEventListener('input', handleSearch);
         document.addEventListener('mousemove', handleMouseMove);
+
+        // About Modal Events
+        if (aboutBtn) aboutBtn.addEventListener('click', openAboutModal);
+        if (closeAboutModalBtn) closeAboutModalBtn.addEventListener('click', closeAboutModal);
+        if (aboutModal) {
+            aboutModal.addEventListener('click', (e) => {
+                if (e.target === aboutModal) closeAboutModal();
+            });
+        }
 
         // Light Mode Toggle
         const toggleLightBtn = document.getElementById('toggle-light-btn');
@@ -1207,6 +1220,15 @@ async function addTrackFromSearch(trackTemplate) {
     if (!state.isPlaying) togglePlay();
 
     closeModal();
+}
+
+function openAboutModal() {
+    console.log('📖 Opening About Modal');
+    if (aboutModal) aboutModal.classList.remove('hidden');
+}
+
+function closeAboutModal() {
+    if (aboutModal) aboutModal.classList.add('hidden');
 }
 
 init();
