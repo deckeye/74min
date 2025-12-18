@@ -1,0 +1,11 @@
+{
+  "name": "74min",
+  "version": "1.0.0",
+  "description": "74min Music Playlist Manager",
+  "main": "index.html",
+  "scripts": {
+    "build": "node scripts/generate-config.js"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -5,8 +5,11 @@ console.log('74min Initializing...');
 // Initialize Supabase
 const isSupabaseReady = window.supabaseClient?.init();
 
-// Import Config
-import { CONFIG } from './config.js';
+
+// Configuration State (will be populated by config.js if available)
+let CONFIG = {
+    YOUTUBE_API_KEY: ''
+};
 
 // Simple state
 const state = {
@@ -59,30 +62,60 @@ const DATABASE_TRACKS = [
 
 // Initialize
 async function init() {
-    updateUI();
+    console.log('🚀 init() started');
+    try {
+        // Attempt to load config dynamically to prevent crash if missing
+        try {
+            console.log('📂 Attempting to load config.js...');
+            const configModule = await import('./config.js');
+            CONFIG = configModule.CONFIG;
+            console.log('✅ config.js loaded successfully');
+        } catch (configError) {
+            console.warn('⚠️ config.js not found or failed to load. Using fallback/mock mode.', configError);
+        }
 
-    // Event Listeners
-    const clearAllBtn = document.getElementById('clear-all-btn');
-    if (clearAllBtn) clearAllBtn.addEventListener('click', deleteAllTracks);
+        updateUI();
+        console.log('📊 UI Updated');
 
-    if (addBtn) addBtn.addEventListener('click', () => openModal());
-    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-    if (modalOverlay) modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModal();
-    });
-    if (searchInput) searchInput.addEventListener('input', handleSearch);
-    document.addEventListener('mousemove', handleMouseMove);
+        // Event Listeners
+        const clearAllBtn = document.getElementById('clear-all-btn');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', deleteAllTracks);
+            console.log('🔗 Clear All button linked');
+        }
 
-    // Toggle play on CD click
-    if (cdVisual) cdVisual.addEventListener('click', togglePlay);
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                console.log('➕ Add button clicked');
+                openModal();
+            });
+            console.log('🔗 Add Track button linked');
+        }
 
-    // Check Supabase connection
-    if (isSupabaseReady) {
-        console.log('✅ Using Supabase backend');
-        // Load existing playlists if any
-        await loadPlaylists();
-    } else {
-        console.log('⚠️ Using mock data (Supabase not configured)');
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) closeModal();
+            });
+        }
+        if (searchInput) searchInput.addEventListener('input', handleSearch);
+        document.addEventListener('mousemove', handleMouseMove);
+
+        // Toggle play on CD click
+        if (cdVisual) cdVisual.addEventListener('click', togglePlay);
+
+        // Check Supabase connection
+        if (isSupabaseReady) {
+            console.log('✅ Using Supabase backend');
+            await loadPlaylists();
+        } else {
+            console.log('⚠️ Using mock data (Supabase not configured)');
+        }
+
+        console.log('✨ Initialization complete');
+    } catch (err) {
+        console.error('❌ Critical Initialization Error:', err);
+        alert('Application failed to start. Check console for details.');
     }
 }
 
