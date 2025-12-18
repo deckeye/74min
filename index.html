@@ -20,9 +20,15 @@
 
 <body>
     <div id="app">
+        <!-- Hidden YouTube Player for background-ish playback -->
+        <div id="youtube-player-container"
+            style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;">
+            <div id="player"></div>
+        </div>
         <header class="main-header">
             <h1 class="logo">74min</h1>
             <nav>
+                <button id="toggle-light-btn" class="btn-toggle-light">Light Mode</button>
                 <button class="btn-icon">Login</button>
             </nav>
         </header>
@@ -47,6 +53,11 @@
                 <div class="timeline-header">
                     <div class="header-left" style="display:flex; align-items:baseline; gap:10px;">
                         <h2>Tracklist</h2>
+                        <div class="history-controls">
+                            <button id="undo-btn" class="btn-history" title="Undo (Ctrl+Z)" disabled>↶</button>
+                            <button id="redo-btn" class="btn-history" title="Redo (Ctrl+Shift+Z / Ctrl+Y)"
+                                disabled>↷</button>
+                        </div>
                         <button id="clear-all-btn" class="btn-clear" title="Clear All Tracks">Clear All</button>
                     </div>
                     <div class="time-readout"><span id="current-time">00:00</span> / 74:00</div>

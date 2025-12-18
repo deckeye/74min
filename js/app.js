@@ -18,7 +18,10 @@ const state = {
     maxTime: 74 * 60, // 74 minutes in seconds
     title: "My Summer Mix",
     isPlaying: false,
-    currentPlaylistId: null
+    currentPlaylistId: null,
+    currentTrackIndex: -1, // Currently playing index
+    player: null, // YouTube Player instance
+    isPlayerReady: false
 };
 
 // --- Command Pattern Implementation ---
@@ -156,6 +159,9 @@ const currentTimeEl = document.getElementById('current-time');
 const playlistTitle = document.getElementById('playlist-title');
 const trackListEl = document.getElementById('track-list');
 const addBtn = document.getElementById('add-track-btn');
+const undoBtn = document.getElementById('undo-btn');
+const redoBtn = document.getElementById('redo-btn');
+const clearAllBtn = document.getElementById('clear-all-btn');
 
 const modalOverlay = document.getElementById('search-modal');
 const closeModalBtn = document.getElementById('close-modal');
@@ -194,7 +200,9 @@ async function init() {
         console.log('📊 UI Updated');
 
         // Event Listeners
-        const clearAllBtn = document.getElementById('clear-all-btn');
+        if (undoBtn) undoBtn.addEventListener('click', () => commandManager.undo());
+        if (redoBtn) redoBtn.addEventListener('click', () => commandManager.redo());
+
         if (clearAllBtn) {
             clearAllBtn.addEventListener('click', deleteAllTracks);
             console.log('🔗 Clear All button linked');
@@ -216,6 +224,15 @@ async function init() {
         }
         if (searchInput) searchInput.addEventListener('input', handleSearch);
         document.addEventListener('mousemove', handleMouseMove);
+
+        // Light Mode Toggle
+        const toggleLightBtn = document.getElementById('toggle-light-btn');
+        if (toggleLightBtn) {
+            toggleLightBtn.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                toggleLightBtn.textContent = document.body.classList.contains('light-mode') ? 'Modern Mode' : 'Light Mode';
+            });
+        }
 
         // Keyboard Shortcuts for Undo/Redo
         document.addEventListener('keydown', (e) => {
@@ -244,6 +261,9 @@ async function init() {
         } else {
             console.log('⚠️ Using mock data (Supabase not configured)');
         }
+
+        // Initialize YouTube Player
+        initYouTubePlayer();
 
         console.log('✨ Initialization complete');
     } catch (err) {
@@ -313,11 +333,131 @@ function renderTrackList() {
 }
 
 function togglePlay() {
+    if (!state.isPlayerReady) {
+        console.log('Player not ready yet');
+        return;
+    }
+
     state.isPlaying = !state.isPlaying;
     if (state.isPlaying) {
         cdDisc.classList.add('playing');
+        // If nothing is playing, start from the first track
+        if (state.currentTrackIndex === -1 && state.tracks.length > 0) {
+            playTrack(0);
+        } else {
+            state.player.playVideo();
+        }
     } else {
         cdDisc.classList.remove('playing');
+        state.player.pauseVideo();
+    }
+}
+
+function initYouTubePlayer() {
+    // Load YouTube IFrame API
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    // Global callback for YT API
+    window.onYouTubeIframeAPIReady = () => {
+        console.log('📺 YouTube API Ready');
+        state.player = new YT.Player('player', {
+            height: '0',
+            width: '0',
+            playerVars: {
+                'playsinline': 1,
+                'controls': 0,
+                'disablekb': 1,
+                'fs': 0,
+                'rel': 0
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange,
+                'onError': (e) => console.error('YT Player Error:', e)
+            }
+        });
+    };
+}
+
+function onPlayerReady(event) {
+    console.log('📺 YouTube Player Instance Ready');
+    state.isPlayerReady = true;
+}
+
+function onPlayerStateChange(event) {
+    // YT.PlayerState.ENDED = 0
+    if (event.data === 0) {
+        console.log('🎵 Track ended, moving to next');
+        playNextTrack();
+    }
+}
+
+function playTrack(index) {
+    if (!state.isPlayerReady || index < 0 || index >= state.tracks.length) return;
+
+    const track = state.tracks[index];
+    state.currentTrackIndex = index;
+
+    console.log(`🎵 Playing: ${track.title} (${track.service})`);
+
+    // YouTube specific play
+    if (track.service === 'YT' && track.id) {
+        state.player.loadVideoById(track.id);
+        state.isPlaying = true;
+        cdDisc.classList.add('playing');
+        updateMediaSession(track);
+    } else {
+        console.warn('Track service not supported for playback yet:', track.service);
+        // Skip to next if not playable
+        playNextTrack();
+    }
+
+    // Highlight current track in UI (future enhancement)
+    updateUI();
+}
+
+function playNextTrack() {
+    if (state.currentTrackIndex + 1 < state.tracks.length) {
+        playTrack(state.currentTrackIndex + 1);
+    } else {
+        console.log('🏁 End of playlist');
+        state.isPlaying = false;
+        state.currentTrackIndex = -1;
+        cdDisc.classList.remove('playing');
+        state.player.stopVideo();
+    }
+}
+
+function updateMediaSession(track) {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: track.title,
+            artist: track.artist,
+            album: state.title,
+            artwork: [
+                { src: track.thumbnail || 'https://via.placeholder.com/150', sizes: '150x150', type: 'image/png' }
+            ]
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => {
+            state.player.playVideo();
+            state.isPlaying = true;
+            cdDisc.classList.add('playing');
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+            state.player.pauseVideo();
+            state.isPlaying = false;
+            cdDisc.classList.remove('playing');
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+            if (state.currentTrackIndex > 0) playTrack(state.currentTrackIndex - 1);
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+            playNextTrack();
+        });
     }
 }
 
@@ -503,6 +643,20 @@ function updateUI() {
     }
 
     if (currentTimeEl) currentTimeEl.textContent = formatTime(state.totalTime);
+
+    // Update track list activity state
+    const trackItems = trackListEl.querySelectorAll('.track-item');
+    trackItems.forEach((el, idx) => {
+        if (idx === state.currentTrackIndex) {
+            el.classList.add('active');
+        } else {
+            el.classList.remove('active');
+        }
+    });
+
+    // Update Undo/Redo button states
+    if (undoBtn) undoBtn.disabled = commandManager.undoStack.length === 0;
+    if (redoBtn) redoBtn.disabled = commandManager.redoStack.length === 0;
 }
 
 function openModal() {

@@ -260,6 +260,16 @@ body {
     }
 }
 
+.track-item.active {
+    background: rgba(0, 242, 255, 0.15);
+    border-left: 3px solid var(--accent-primary);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
+}
+
+.track-item.active .track-title {
+    color: var(--accent-primary);
+}
+
 .track-info {
     display: flex;
     flex-direction: column;
@@ -430,6 +440,7 @@ body {
     font-size: 1.5rem;
     background: linear-gradient(to right, white, var(--text-muted));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -546,7 +557,50 @@ body {
     background: var(--accent-primary);
     color: black;
     transform: scale(1.1);
-}.btn-clear {
+}
+
+/* --- Light Mode (Saizeriya Mode) --- */
+body.light-mode * {
+    animation: none !important;
+    backdrop-filter: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+}
+
+body.light-mode .cd-disc {
+    background: #ccc;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .editor-panel {
+    background: #1a1a1e;
+    border: 1px solid #333;
+}
+
+body.light-mode .cd-stage {
+    perspective: none;
+}
+
+body.light-mode .cd-container {
+    transform: none !important;
+}
+
+.btn-toggle-light {
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-right: 1rem;
+}
+
+.btn-toggle-light:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-clear {
     background: none;
     border: none;
     color: var(--text-muted);
@@ -563,4 +617,38 @@ body {
     color: var(--accent-secondary);
     border-color: var(--accent-secondary);
     background: rgba(255, 0, 85, 0.1);
+}
+
+.history-controls {
+    display: flex;
+    gap: 5px;
+    margin-right: 5px;
+}
+
+.btn-history {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+    padding-bottom: 2px;
+}
+
+.btn-history:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.btn-history:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    filter: grayscale(1);
 }
