@@ -17,12 +17,34 @@ const state = {
     totalTime: 0, // in seconds
     maxTime: 74 * 60, // 74 minutes in seconds
     title: "My Summer Mix",
+    mediaType: 'cd', // 'cd' | 'cassette' | 'pomodoro'
     isPlaying: false,
     currentPlaylistId: null,
-    currentTrackIndex: -1, // Currently playing index
-    player: null, // YouTube Player instance
-    isPlayerReady: false
+    currentTrackIndex: -1,
+    player: null,
+    isPlayerReady: false,
+
+    // Pomodoro specific state [RE-APPLIED & EXPANDED]
+    pomodoro: {
+        phase: 'work', // 'work' | 'break'
+        workDuration: 25 * 60,
+        breakDuration: 5 * 60,
+        timer: null,
+        elapsedInPhase: 0,
+        soundType: 'bell', // 'bell' | 'voice' | 'waves'
+        isAutoNightWaves: false,
+        isRadioActive: false
+    }
 };
+
+const MODES = {
+    STANDARD: { label: '74min', time: 74 * 60 },
+    CLASSIC: { label: '60min', time: 60 * 60 },
+    FOCUS: { label: '25min', time: 25 * 60 }
+};
+
+let knobClickCount = 0;
+let irukaAudio = null;
 
 // --- Command Pattern Implementation ---
 class CommandManager {
@@ -162,6 +184,12 @@ const addBtn = document.getElementById('add-track-btn');
 const undoBtn = document.getElementById('undo-btn');
 const redoBtn = document.getElementById('redo-btn');
 const clearAllBtn = document.getElementById('clear-all-btn');
+const mediaToggleBtn = document.getElementById('media-toggle');
+const logoEl = document.getElementById('main-logo');
+const pomoKnob = document.getElementById('pomo-knob');
+const pomoSoundSelect = document.getElementById('pomo-sound-select');
+const pomoNightWavesCheck = document.getElementById('pomo-night-waves');
+const irukaStream = document.getElementById('iruka-stream');
 
 const modalOverlay = document.getElementById('search-modal');
 const closeModalBtn = document.getElementById('close-modal');
@@ -251,8 +279,43 @@ async function init() {
             }
         });
 
-        // Toggle play on CD click
-        if (cdVisual) cdVisual.addEventListener('click', togglePlay);
+        if (mediaToggleBtn) {
+            mediaToggleBtn.addEventListener('click', () => {
+                const types = ['cd', 'cassette'];
+                let nextIndex = (types.indexOf(state.mediaType) + 1) % types.length;
+                switchMedia(types[nextIndex]);
+            });
+        }
+
+        // Secret Trigger: Logo Click for Pomodoro Timer Mode
+        let logoClickSessions = 0;
+        if (logoEl) {
+            logoEl.addEventListener('click', () => {
+                logoClickSessions++;
+                if (logoClickSessions >= 5) {
+                    alert('SECRET MODE UNLOCKED: Pomodoro Timer Mode');
+                    switchMedia('pomodoro');
+                    logoClickSessions = 0;
+                }
+            });
+        }
+
+        // Pomodoro Specific Events
+        if (pomoKnob) {
+            pomoKnob.addEventListener('click', handleKnobClick);
+        }
+
+        if (pomoSoundSelect) {
+            pomoSoundSelect.addEventListener('change', (e) => {
+                state.pomodoro.soundType = e.target.value;
+            });
+        }
+
+        if (pomoNightWavesCheck) {
+            pomoNightWavesCheck.addEventListener('change', (e) => {
+                state.pomodoro.isAutoNightWaves = e.target.checked;
+            });
+        }
 
         // Check Supabase connection
         if (isSupabaseReady) {
@@ -657,6 +720,188 @@ function updateUI() {
     // Update Undo/Redo button states
     if (undoBtn) undoBtn.disabled = commandManager.undoStack.length === 0;
     if (redoBtn) redoBtn.disabled = commandManager.redoStack.length === 0;
+
+    // Update Media Labels
+    updateMediaDisplays();
+}
+
+function updateMediaDisplays() {
+    const minLabel = `${Math.floor(state.maxTime / 60)}min`;
+    const cLabel = `C-${Math.floor(state.maxTime / 60)}`;
+
+    const cdTimeTag = document.getElementById('cd-time-tag');
+    const cassetteTimeTag = document.getElementById('cassette-time-tag');
+    const cdTitle = document.getElementById('playlist-title');
+    const cassetteTitle = document.getElementById('cassette-title-tag');
+
+    if (cdTimeTag) cdTimeTag.textContent = minLabel;
+    if (cassetteTimeTag) cassetteTimeTag.textContent = cLabel;
+    if (cdTitle) cdTitle.textContent = state.title;
+    if (cassetteTitle) cassetteTitle.textContent = state.title;
+
+    // Pomodoro Display
+    if (state.mediaType === 'pomodoro') {
+        const pomoTimeEl = document.getElementById('pomo-time');
+        const pomoStatusEl = document.getElementById('pomo-status');
+        const remaining = (state.pomodoro.phase === 'work' ? state.pomodoro.workDuration : state.pomodoro.breakDuration) - state.pomodoro.elapsedInPhase;
+
+        if (pomoTimeEl) {
+            if (state.pomodoro.isRadioActive) {
+                pomoTimeEl.textContent = 'LIVE';
+                pomoTimeEl.style.fontSize = '3rem';
+            } else {
+                pomoTimeEl.textContent = formatTime(Math.max(0, remaining));
+                pomoTimeEl.style.fontSize = '4rem';
+            }
+        }
+        if (pomoStatusEl) {
+            pomoStatusEl.textContent = state.pomodoro.isRadioActive ? 'FM IRUKA' : state.pomodoro.phase.toUpperCase();
+        }
+    }
+}
+
+function switchMedia(type) {
+    console.log(`🎬 Switching media to: ${type}`);
+    state.mediaType = type;
+
+    // Hide all
+    document.querySelectorAll('.media-element').forEach(el => el.classList.add('hidden'));
+
+    // Show selected
+    const elId = `${type}-element`;
+    const targetEl = document.getElementById(elId);
+    if (targetEl) targetEl.classList.remove('hidden');
+
+    // Update button text
+    if (mediaToggleBtn) {
+        const label = type === 'pomodoro' ? 'Pomodoro Timer' : type.toUpperCase();
+        mediaToggleBtn.textContent = `Media: ${label}`;
+    }
+
+    if (type === 'pomodoro') {
+        startPomodoro();
+    } else {
+        stopPomodoro();
+        stopRadio();
+    }
+
+    updateUI();
+}
+
+function startPomodoro() {
+    if (state.pomodoro.timer) clearInterval(state.pomodoro.timer);
+    state.pomodoro.elapsedInPhase = 0;
+    state.pomodoro.timer = setInterval(() => {
+        state.pomodoro.elapsedInPhase++;
+        const limit = state.pomodoro.phase === 'work' ? state.pomodoro.workDuration : state.pomodoro.breakDuration;
+        if (state.pomodoro.elapsedInPhase >= limit) {
+            handlePhaseSwitch();
+        }
+        updateUI();
+    }, 1000);
+}
+
+function stopPomodoro() {
+    if (state.pomodoro.timer) {
+        clearInterval(state.pomodoro.timer);
+        state.pomodoro.timer = null;
+    }
+}
+
+async function handlePhaseSwitch() {
+    console.log('⏳ Transitioning phase...');
+
+    // Fade out
+    await fadeOutAudio();
+
+    state.pomodoro.phase = state.pomodoro.phase === 'work' ? 'break' : 'work';
+    state.pomodoro.elapsedInPhase = 0;
+
+    // Play SE / Announcement
+    playPomodoroSE();
+
+    updateUI();
+}
+
+function playPomodoroSE() {
+    const hours = new Date().getHours();
+    const isNightTime = hours >= 22 || hours < 5;
+    const useWaves = state.pomodoro.soundType === 'waves' || (state.pomodoro.isAutoNightWaves && isNightTime);
+
+    if (useWaves) {
+        console.log('🌊 Playing Beach Waves...');
+        // In reality: new Audio('assets/waves.mp3').play();
+    } else {
+        console.log('🔔 Ringing Bell...');
+        // In reality: new Audio('assets/bell.mp3').play();
+    }
+
+    if (state.pomodoro.soundType === 'voice') {
+        // Wait a small bit after the bell/waves to start voice for natural feel
+        setTimeout(() => {
+            playVoiceAnnouncement();
+        }, 1000);
+    }
+}
+
+function playVoiceAnnouncement() {
+    const isBreak = state.pomodoro.phase === 'break';
+    const textJp = isBreak ? "休憩、休憩、休憩時間です" : "作業再開、作業再開の時間ですよ！作業を再開してください";
+    const textEn = isBreak ? "Break time, break time, it's time for a break" : "Work time, work time, please resume your work";
+
+    const msgJp = new SpeechSynthesisUtterance(textJp);
+    msgJp.lang = 'ja-JP';
+    const msgEn = new SpeechSynthesisUtterance(textEn);
+    msgEn.lang = 'en-US';
+
+    speechSynthesis.speak(msgJp);
+    msgJp.onend = () => speechSynthesis.speak(msgEn);
+}
+
+async function fadeOutAudio() {
+    return new Promise(resolve => {
+        let vol = 1.0;
+        const interval = setInterval(() => {
+            vol -= 0.1;
+            if (vol <= 0) {
+                clearInterval(interval);
+                if (state.isPlaying) state.player.pauseVideo();
+                if (state.pomodoro.isRadioActive) irukaStream.pause();
+                resolve();
+            } else {
+                if (state.isPlaying) state.player.setVolume(vol * 100);
+                if (state.pomodoro.isRadioActive) irukaStream.volume = vol;
+            }
+        }, 100);
+    });
+}
+
+function handleKnobClick() {
+    knobClickCount++;
+    console.log(`🎛 Knob clicked: ${knobClickCount}`);
+    if (knobClickCount >= 3) {
+        toggleRadio();
+        knobClickCount = 0;
+    }
+}
+
+function toggleRadio() {
+    state.pomodoro.isRadioActive = !state.pomodoro.isRadioActive;
+    if (state.pomodoro.isRadioActive) {
+        console.log('📻 FM IRUKA Streaming Start');
+        if (state.isPlaying) togglePlay(); // Stop YT
+        irukaStream.volume = 1.0;
+        irukaStream.play().catch(e => console.error('Radio block:', e));
+    } else {
+        stopRadio();
+    }
+    updateUI();
+}
+
+function stopRadio() {
+    state.pomodoro.isRadioActive = false;
+    irukaStream.pause();
+    irukaStream.currentTime = 0;
 }
 
 function openModal() {

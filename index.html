@@ -26,25 +26,63 @@
             <div id="player"></div>
         </div>
         <header class="main-header">
-            <h1 class="logo">74min</h1>
+            <h1 class="logo" id="main-logo">74min</h1>
             <nav>
+                <button id="media-toggle" class="btn-toggle-light">Media: CD</button>
                 <button id="toggle-light-btn" class="btn-toggle-light">Light Mode</button>
                 <button class="btn-icon">Login</button>
             </nav>
         </header>
 
         <main class="workspace">
-            <!-- The CD-R visual will be injected here or live here -->
             <section id="cd-stage" class="cd-stage">
                 <div class="cd-container" id="cd-visual">
-                    <!-- CD Structure controlled by CSS/JS -->
-                    <div class="cd-disc">
+                    <!-- CD Structure -->
+                    <div class="cd-disc media-element" id="cd-element">
                         <div class="cd-surface"></div>
                         <div class="cd-label">
                             <span class="handwritten" id="playlist-title">Untitled Mix</span>
+                            <span class="time-label" id="cd-time-tag">74min</span>
                         </div>
                         <div class="cd-hole"></div>
                     </div>
+
+                    <!-- Cassette Structure -->
+                    <div class="cassette-body media-element hidden" id="cassette-element">
+                        <div class="cassette-window">
+                            <div class="cassette-reel reel-left"></div>
+                            <div class="cassette-reel reel-right"></div>
+                            <div class="tape-remains" id="tape-visual"></div>
+                        </div>
+                        <div class="cassette-label">
+                            <span class="handwritten" id="cassette-title-tag">Untitled Mix</span>
+                            <span class="cassette-brand" id="cassette-time-tag">C-74</span>
+                        </div>
+                    </div>
+
+                    <!-- Pomodoro Timer Visual -->
+                    <div class="pomodoro-timer media-element hidden" id="pomodoro-element">
+                        <div class="timer-display">
+                            <span id="pomo-status">FOCUS</span>
+                            <span id="pomo-time">25:00</span>
+                        </div>
+                        <div class="timer-knob" id="pomo-knob" title="Click 3 times for a secret..."></div>
+
+                        <div class="pomo-controls">
+                            <select id="pomo-sound-select" class="pomo-select">
+                                <option value="bell">Sound: Bell (Classic)</option>
+                                <option value="voice">Sound: Voice (JP/EN)</option>
+                                <option value="waves">Sound: Waves (Beach)</option>
+                            </select>
+                            <div class="pomo-checkbox-group">
+                                <input type="checkbox" id="pomo-night-waves" class="pomo-checkbox">
+                                <label for="pomo-night-waves">Auto-Night Waves (22:00-05:00)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Radio Stream -->
+                    <audio id="iruka-stream" src="http://hdv.nkansai.tv/iruka" preload="none"></audio>
                 </div>
             </section>
 
