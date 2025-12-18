@@ -220,14 +220,15 @@ async function init() {
         // Keyboard Shortcuts for Undo/Redo
         document.addEventListener('keydown', (e) => {
             const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+            const key = e.key.toLowerCase();
 
             // Undo: Ctrl+Z
-            if (isCmdOrCtrl && e.key === 'z' && !e.shiftKey) {
+            if (isCmdOrCtrl && key === 'z' && !e.shiftKey) {
                 e.preventDefault();
                 commandManager.undo();
             }
             // Redo: Ctrl+Y or Ctrl+Shift+Z
-            if (isCmdOrCtrl && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+            if (isCmdOrCtrl && (key === 'y' || (key === 'z' && e.shiftKey))) {
                 e.preventDefault();
                 commandManager.redo();
             }
