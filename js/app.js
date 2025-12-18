@@ -21,6 +21,122 @@ const state = {
     currentPlaylistId: null
 };
 
+// --- Command Pattern Implementation ---
+class CommandManager {
+    constructor() {
+        this.undoStack = [];
+        this.redoStack = [];
+    }
+
+    async execute(command) {
+        console.log('Executing command:', command.constructor.name);
+        await command.execute();
+        this.undoStack.push(command);
+        this.redoStack = [];
+        updateUI();
+    }
+
+    async undo() {
+        if (this.undoStack.length === 0) return;
+        const command = this.undoStack.pop();
+        console.log('Undoing command:', command.constructor.name);
+        await command.undo();
+        this.redoStack.push(command);
+        updateUI();
+    }
+
+    async redo() {
+        if (this.redoStack.length === 0) return;
+        const command = this.redoStack.pop();
+        console.log('Redoing command:', command.constructor.name);
+        await command.execute();
+        this.undoStack.push(command);
+        updateUI();
+    }
+}
+
+const commandManager = new CommandManager();
+
+class AddTrackCommand {
+    constructor(track) {
+        this.track = { ...track };
+    }
+    async execute() {
+        if (isSupabaseReady) {
+            if (this.track.id) {
+                // If already has ID (e.g. from Redo), just restore it
+                await updateTrackSoftDelete(this.track.id, false);
+            } else {
+                // New track
+                await saveTrackToSupabase(this.track);
+            }
+        }
+        state.tracks.push(this.track);
+        state.totalTime += this.track.duration;
+        renderTrackList();
+    }
+    async undo() {
+        const index = state.tracks.indexOf(this.track);
+        if (index > -1) {
+            state.tracks.splice(index, 1);
+            state.totalTime -= this.track.duration;
+        }
+        if (isSupabaseReady && this.track.id) {
+            await updateTrackSoftDelete(this.track.id, true);
+        }
+        renderTrackList();
+    }
+}
+
+class DeleteTrackCommand {
+    constructor(track) {
+        this.track = track;
+        this.index = state.tracks.indexOf(track);
+    }
+    async execute() {
+        if (this.index > -1) {
+            state.tracks.splice(this.index, 1);
+            state.totalTime -= this.track.duration;
+        }
+        if (isSupabaseReady && this.track.id) {
+            await updateTrackSoftDelete(this.track.id, true);
+        }
+        renderTrackList();
+    }
+    async undo() {
+        state.tracks.splice(this.index, 0, this.track);
+        state.totalTime += this.track.duration;
+        if (isSupabaseReady && this.track.id) {
+            await updateTrackSoftDelete(this.track.id, false);
+        }
+        renderTrackList();
+    }
+}
+
+class ClearAllCommand {
+    constructor() {
+        this.previousTracks = [...state.tracks];
+        this.previousTotalTime = state.totalTime;
+    }
+    async execute() {
+        state.tracks = [];
+        state.totalTime = 0;
+        if (isSupabaseReady && state.currentPlaylistId) {
+            await softDeleteAllTracks(state.currentPlaylistId);
+        }
+        renderTrackList();
+    }
+    async undo() {
+        state.tracks = [...this.previousTracks];
+        state.totalTime = this.previousTotalTime;
+        if (isSupabaseReady && state.currentPlaylistId) {
+            await restoreAllTracks(state.currentPlaylistId);
+        }
+        renderTrackList();
+    }
+}
+// --------------------------------------
+
 // Mock Data (fallback if Supabase not configured)
 const MOCK_TRACKS = [
     { title: "Midnight City", artist: "M83", duration: 243, service: "YT" },
@@ -101,6 +217,22 @@ async function init() {
         if (searchInput) searchInput.addEventListener('input', handleSearch);
         document.addEventListener('mousemove', handleMouseMove);
 
+        // Keyboard Shortcuts for Undo/Redo
+        document.addEventListener('keydown', (e) => {
+            const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+
+            // Undo: Ctrl+Z
+            if (isCmdOrCtrl && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                commandManager.undo();
+            }
+            // Redo: Ctrl+Y or Ctrl+Shift+Z
+            if (isCmdOrCtrl && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                commandManager.redo();
+            }
+        });
+
         // Toggle play on CD click
         if (cdVisual) cdVisual.addEventListener('click', togglePlay);
 
@@ -162,17 +294,21 @@ async function loadPlaylistTracks(playlistId) {
         }
 
         // Populate state with loaded tracks
-        state.tracks = data;
-        state.totalTime = data.reduce((sum, track) => sum + track.duration, 0);
+        state.tracks = data.filter(t => !t.is_deleted);
+        state.totalTime = state.tracks.reduce((sum, track) => sum + track.duration, 0);
         state.currentPlaylistId = playlistId;
 
-        // Render all tracks
-        trackListEl.innerHTML = '';
-        data.forEach(track => renderTrack(track));
+        renderTrackList();
         updateUI();
     } catch (err) {
         console.error('Error loading tracks:', err);
     }
+}
+
+// Helper to re-render the entire list
+function renderTrackList() {
+    trackListEl.innerHTML = '';
+    state.tracks.forEach(track => renderTrack(track));
 }
 
 function togglePlay() {
@@ -193,16 +329,7 @@ async function addRandomTrack() {
         return;
     }
 
-    // If Supabase is available, save to DB
-    if (isSupabaseReady) {
-        await saveTrackToSupabase(track);
-    }
-
-    state.tracks.push(track);
-    state.totalTime += track.duration;
-
-    renderTrack(track);
-    updateUI();
+    await commandManager.execute(new AddTrackCommand(track));
     animateCDAction();
 
     // Auto-play on first track if not playing
@@ -273,73 +400,41 @@ async function deleteAllTracks() {
     if (state.tracks.length === 0) return;
     if (!confirm('Are you sure you want to empty the disc? This will delete all tracks.')) return;
 
-    // 1. Clear State
-    const previousTracks = [...state.tracks]; // Backup just in case (though we don't have undo yet)
-    state.tracks = [];
-    state.totalTime = 0;
+    await commandManager.execute(new ClearAllCommand());
+}
 
-    // 2. Clear Supabase
-    if (state.currentPlaylistId && window.supabaseClient?.client) {
-        const supabase = window.supabaseClient.client;
-        try {
-            const { error } = await supabase
-                .from('tracks')
-                .delete()
-                .eq('playlist_id', state.currentPlaylistId);
+async function updateTrackSoftDelete(trackId, isDeleted) {
+    const supabase = window.supabaseClient?.client;
+    if (!supabase) return;
+    const { error } = await supabase
+        .from('tracks')
+        .update({ is_deleted: isDeleted })
+        .eq('id', trackId);
+    if (error) console.error('Soft delete error:', error);
+}
 
-            if (error) {
-                console.error('Error deleting all tracks:', error);
-                // Optional: restore state if critical failure, but for now just log
-            } else {
-                console.log('All tracks deleted from DB');
+async function softDeleteAllTracks(playlistId) {
+    const supabase = window.supabaseClient?.client;
+    if (!supabase) return;
+    const { error } = await supabase
+        .from('tracks')
+        .update({ is_deleted: true })
+        .eq('playlist_id', playlistId);
+    if (error) console.error('Bulk soft delete error:', error);
+}
 
-                // Reset playlist duration
-                await supabase
-                    .from('playlists')
-                    .update({ total_duration: 0 })
-                    .eq('id', state.currentPlaylistId);
-            }
-        } catch (err) {
-            console.error('Supabase error during bulk delete:', err);
-        }
-    }
-
-    // 3. Update UI
-    trackListEl.innerHTML = '';
-    updateUI();
+async function restoreAllTracks(playlistId) {
+    const supabase = window.supabaseClient?.client;
+    if (!supabase) return;
+    const { error } = await supabase
+        .from('tracks')
+        .update({ is_deleted: false })
+        .eq('playlist_id', playlistId);
+    if (error) console.error('Bulk restore error:', error);
 }
 
 async function deleteTrack(track) {
-    // Confirmation dialog removed per Issue #18
-
-    // 1. Remove from State
-    const index = state.tracks.indexOf(track);
-    if (index > -1) {
-        state.tracks.splice(index, 1);
-        state.totalTime -= track.duration;
-    }
-
-    // 2. Remove from Supabase (if ID exists)
-    if (track.id && window.supabaseClient?.client) {
-        const supabase = window.supabaseClient.client;
-        supabase.from('tracks').delete().eq('id', track.id).then(({ error }) => {
-            if (error) console.error('Error deleting from DB:', error);
-            else console.log('Deleted from DB');
-        });
-
-        // Update playlist duration in DB
-        if (state.currentPlaylistId) {
-            supabase.from('playlists')
-                .update({ total_duration: state.totalTime })
-                .eq('id', state.currentPlaylistId);
-        }
-    }
-
-    // 3. Update UI
-    // Re-render entire list to ensure order/stats are correct
-    trackListEl.innerHTML = '';
-    state.tracks.forEach(t => renderTrack(t)); // Pass original track refs
-    updateUI();
+    await commandManager.execute(new DeleteTrackCommand(track));
 }
 
 function renderTrack(track) {
@@ -593,23 +688,12 @@ async function addTrackFromSearch(trackTemplate) {
         return;
     }
 
-    // If Supabase is available, save to DB
-    if (isSupabaseReady) {
-        await saveTrackToSupabase(track);
-    }
-
-    state.tracks.push(track);
-    state.totalTime += track.duration;
-
-    renderTrack(track); // Add to main list
-    updateUI();
+    await commandManager.execute(new AddTrackCommand(track));
     animateCDAction();
 
     // Auto-play checks
     if (!state.isPlaying) togglePlay();
 
-    // Close modal? Maybe keep open for multi-add. 
-    // Let's close for now to be simple.
     closeModal();
 }
 
