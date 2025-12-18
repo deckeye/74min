@@ -317,6 +317,28 @@ async function init() {
             });
         }
 
+        // CD Controls Logic
+        const cdPlayPause = document.getElementById('cd-play-pause');
+        const cdStop = document.getElementById('cd-stop');
+        const cdPrev = document.getElementById('cd-prev');
+        const cdNext = document.getElementById('cd-next');
+
+        if (cdPlayPause) cdPlayPause.addEventListener('click', togglePlay);
+        if (cdStop) cdStop.addEventListener('click', stopPlayback);
+        if (cdPrev) cdPrev.addEventListener('click', playPrevTrack);
+        if (cdNext) cdNext.addEventListener('click', playNextTrack);
+
+        // Cassette Controls Logic
+        const cassPlay = document.getElementById('cass-play');
+        const cassStop = document.getElementById('cass-stop');
+        const cassRew = document.getElementById('cass-rew');
+        const cassFF = document.getElementById('cass-ff');
+
+        if (cassPlay) cassPlay.addEventListener('click', () => { if (!state.isPlaying) togglePlay(); });
+        if (cassStop) cassStop.addEventListener('click', stopPlayback);
+        if (cassRew) cassRew.addEventListener('click', playPrevTrack);
+        if (cassFF) cassFF.addEventListener('click', playNextTrack);
+
         // Check Supabase connection
         if (isSupabaseReady) {
             console.log('✅ Using Supabase backend');
@@ -540,6 +562,24 @@ async function addRandomTrack() {
     if (!state.isPlaying) togglePlay();
 }
 
+function stopPlayback() {
+    state.isPlaying = false;
+    state.currentTrackIndex = -1;
+    cdDisc.classList.remove('playing');
+    if (state.player && state.player.stopVideo) {
+        state.player.stopVideo();
+    }
+    updateUI();
+}
+
+function playPrevTrack() {
+    if (state.currentTrackIndex > 0) {
+        playTrack(state.currentTrackIndex - 1);
+    } else if (state.tracks.length > 0) {
+        playTrack(0);
+    }
+}
+
 async function saveTrackToSupabase(track) {
     const supabase = window.supabaseClient?.client;
     if (!supabase) return;
@@ -739,6 +779,29 @@ function updateMediaDisplays() {
     if (cdTitle) cdTitle.textContent = state.title;
     if (cassetteTitle) cassetteTitle.textContent = state.title;
 
+    // CD Control Display
+    const cdTrackNumEl = document.getElementById('cd-track-num');
+    const cdTrackTimeEl = document.getElementById('cd-track-time');
+    if (cdTrackNumEl) {
+        cdTrackNumEl.textContent = state.currentTrackIndex >= 0
+            ? String(state.currentTrackIndex + 1).padStart(2, '0')
+            : '00';
+    }
+    if (cdTrackTimeEl) {
+        // Here we could show track time, but for now let's show total or current track duration
+        if (state.currentTrackIndex >= 0) {
+            cdTrackTimeEl.textContent = formatTime(state.tracks[state.currentTrackIndex].duration);
+        } else {
+            cdTrackTimeEl.textContent = '00:00';
+        }
+    }
+
+    // Update Play/Pause button icons
+    const cdPlayPauseBtn = document.getElementById('cd-play-pause');
+    if (cdPlayPauseBtn) {
+        cdPlayPauseBtn.textContent = state.isPlaying ? 'Ⅱ' : '▶';
+    }
+
     // Pomodoro Display
     if (state.mediaType === 'pomodoro') {
         const pomoTimeEl = document.getElementById('pomo-time');
@@ -771,6 +834,11 @@ function switchMedia(type) {
     const elId = `${type}-element`;
     const targetEl = document.getElementById(elId);
     if (targetEl) targetEl.classList.remove('hidden');
+
+    // Show control panel if it exists
+    const controlsId = `${type}-controls`;
+    const targetControls = document.getElementById(controlsId);
+    if (targetControls) targetControls.classList.remove('hidden');
 
     // Update button text
     if (mediaToggleBtn) {
