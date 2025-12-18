@@ -704,32 +704,35 @@ async function searchYouTube(query) {
 
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.error?.message || 'API Error');
+            throw new Error(err.error?.message || `API Error: ${response.status}`);
         }
 
         const data = await response.json();
 
+        if (!data.items || data.items.length === 0) {
+            renderSearchResultsWithData([]);
+            return;
+        }
+
         // Convert to internal track format
         const tracks = data.items.map(item => ({
-            title: item.snippet.title,
-            artist: item.snippet.channelTitle,
-            duration: 0, // YouTube Search API doesn't return duration. Requires separate 'videos' call. We'll set 0 or fetch details later.
-            // For prototype: random duration or placeholder '??:??'
-            // Actually, let's fetch details to be proper, OR just estimate for now to save quota.
-            // Let's use 0 and handle it in UI? Or better, fetch details.
-            // To save quota (search=100 units), we can skip details (video=1 unit). 
-            // But we need duration for the CD limit.
-            // Let's assume user accepts 0 or we do a second call.
-            // For this step, I'll fetch details for the IDs found.
-            id: item.id.videoId, // Temporary ID holder
+            title: decodeHtmlEntities(item.snippet.title),
+            artist: decodeHtmlEntities(item.snippet.channelTitle),
+            duration: 0,
+            id: item.id.videoId,
             service: 'YT',
             thumbnail: item.snippet.thumbnails.default.url
         }));
 
-        // Fetch details to get duration
-        await fetchTrackDetails(tracks);
+        // Filter out any results that might not have a videoId
+        const validTracks = tracks.filter(t => t.id);
 
-        renderSearchResultsWithData(tracks);
+        if (validTracks.length > 0) {
+            // Fetch details to get duration
+            await fetchTrackDetails(validTracks);
+        }
+
+        renderSearchResultsWithData(validTracks);
 
     } catch (err) {
         console.error('YouTube Search Error:', err);
@@ -737,25 +740,40 @@ async function searchYouTube(query) {
     }
 }
 
+function decodeHtmlEntities(text) {
+    if (!text) return '';
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    return textArea.value;
+}
+
 async function fetchTrackDetails(tracks) {
-    if (tracks.length === 0) return;
-    const ids = tracks.map(t => t.id).join(',');
+    const ids = tracks.map(t => t.id).filter(id => id).join(',');
+    if (!ids) return;
 
     try {
         const response = await fetch(
             `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${CONFIG.YOUTUBE_API_KEY}`
         );
+
+        if (!response.ok) {
+            console.error('YouTube Videos API error:', response.status);
+            return;
+        }
+
         const data = await response.json();
+
+        if (!data.items) return;
 
         // Map duration back to tracks
         data.items.forEach(item => {
             const track = tracks.find(t => t.id === item.id);
-            if (track) {
+            if (track && item.contentDetails) {
                 track.duration = parseISO8601Duration(item.contentDetails.duration);
             }
         });
     } catch (e) {
-        console.error('Details fetch error', e);
+        console.error('Details fetch error:', e);
     }
 }
 
