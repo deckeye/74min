@@ -34,7 +34,8 @@ const state = {
         soundType: 'bell', // 'bell' | 'voice' | 'waves'
         isAutoNightWaves: false,
         isRadioActive: false
-    }
+    },
+    atmosphere: 'cyber' // 'cyber' | 'study-desk'
 };
 
 const MODES = {
@@ -349,6 +350,17 @@ async function init() {
 
         // Initialize YouTube Player
         initYouTubePlayer();
+
+        // Atmosphere Setup
+        const atmoToggleBtn = document.getElementById('atmo-toggle');
+        if (atmoToggleBtn) {
+            atmoToggleBtn.addEventListener('click', () => {
+                const nextAtmo = state.atmosphere === 'cyber' ? 'study-desk' : 'cyber';
+                switchAtmosphere(nextAtmo);
+            });
+        }
+        const savedAtmo = localStorage.getItem('74min_atmo') || 'cyber';
+        switchAtmosphere(savedAtmo);
 
         console.log('✨ Initialization complete');
     } catch (err) {
@@ -763,6 +775,12 @@ function updateUI() {
 
     // Update Media Labels
     updateMediaDisplays();
+
+    // Update Atmosphere Button
+    const atmoToggleBtn = document.getElementById('atmo-toggle');
+    if (atmoToggleBtn) {
+        atmoToggleBtn.textContent = `Atmo: ${state.atmosphere === 'cyber' ? 'Cyber' : 'Study Desk'}`;
+    }
 }
 
 function updateMediaDisplays() {
@@ -853,6 +871,14 @@ function switchMedia(type) {
         stopRadio();
     }
 
+    updateUI();
+}
+
+function switchAtmosphere(type) {
+    console.log(`🌍 Switching atmosphere to: ${type}`);
+    state.atmosphere = type;
+    document.body.dataset.atmosphere = type;
+    localStorage.setItem('74min_atmo', type);
     updateUI();
 }
 
