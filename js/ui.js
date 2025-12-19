@@ -75,6 +75,60 @@ export function updateUI() {
     }
 
     updateMediaDisplays();
+    updateTapePhysics();
+}
+
+/**
+ * Calculations for realistic tape accumulation and auto-reverse
+ */
+export function updateTapePhysics() {
+    const spoolLeft = document.getElementById('spool-left');
+    const spoolRight = document.getElementById('spool-right');
+    const sideIndicator = document.getElementById('side-indicator');
+    const cassElement = document.getElementById('cassette-element');
+
+    if (!spoolLeft || !spoolRight) return;
+
+    // Logic: 
+    // Side A = 0 to maxTime/2
+    // Side B = maxTime/2 to maxTime (reflected progress)
+    const midPoint = state.maxTime / 2;
+    let progress; // 0.0 to 1.0 within the current side
+    const isSideB = state.totalTime > midPoint;
+
+    if (!isSideB) {
+        progress = state.totalTime / midPoint;
+        if (sideIndicator) sideIndicator.textContent = 'SIDE A';
+        if (cassElement) cassElement.classList.remove('reversed');
+    } else {
+        progress = (state.totalTime - midPoint) / midPoint;
+        if (sideIndicator) sideIndicator.textContent = 'SIDE B';
+        if (cassElement) cassElement.classList.add('reversed');
+    }
+
+    // Tape Radii:
+    // Min radius (hub only) = 35px
+    // Max radius (full tape) = 110px
+    // Since total volume is constant, the sum of areas is constant (roughly)
+    // Here we use a simpler linear-to-sqrt approximation for visual feel
+    const minR = 35;
+    const maxR = 110;
+
+    let leftR, rightR;
+    if (!isSideB) {
+        // Side A: Left reel (source) decreases, Right reel (take-up) increases
+        leftR = maxR - (maxR - minR) * progress;
+        rightR = minR + (maxR - minR) * progress;
+    } else {
+        // Side B: Right reel becomes source, Left reel becomes take-up
+        // But physically, on reverse, the take-up reel is often the one that was the source
+        // Let's stick to the visual: Tape is physically moving to the other side
+        rightR = maxR - (maxR - minR) * progress;
+        leftR = minR + (maxR - minR) * progress;
+    }
+
+    spoolLeft.style.setProperty('--radius', `${leftR}px`);
+    spoolRight.style.setProperty('--radius', `${rightR}px`);
 }
 
 export function renderTrack(track, onDeleteCallback) {
