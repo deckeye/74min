@@ -131,6 +131,19 @@ export function updateTapePhysics() {
     spoolRight.style.setProperty('--radius', `${rightR}px`);
 }
 
+/**
+ * Animate the handwriting effect on the cassette sticker
+ */
+export function animateLabelWriting(text) {
+    const el = document.getElementById('cassette-title-tag');
+    if (!el) return;
+
+    el.textContent = text;
+    el.classList.remove('writing');
+    void el.offsetWidth; // Trigger reflow
+    el.classList.add('writing');
+}
+
 export function renderTrack(track, onDeleteCallback) {
     const trackListEl = document.getElementById('track-list');
     if (!trackListEl) return;

@@ -11,7 +11,7 @@ export const state = {
     tracks: [],
     totalTime: 0, // in seconds
     maxTime: 74 * 60, // 74 minutes in seconds
-    title: "My Summer Mix",
+    title: localStorage.getItem('74min_title') || "My Summer Mix",
     mediaType: 'cd', // 'cd' | 'cassette' | 'pomodoro'
     isPlaying: false,
     currentPlaylistId: null,

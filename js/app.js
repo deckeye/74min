@@ -80,8 +80,47 @@ function setupEventListeners() {
     document.getElementById('about-btn')?.addEventListener('click', () => document.getElementById('about-modal')?.classList.remove('hidden'));
     document.getElementById('close-about-modal')?.addEventListener('click', () => document.getElementById('about-modal')?.classList.add('hidden'));
 
+    // Sticker Edit
+    const sticker = document.getElementById('cassette-sticker');
+    const stickerTag = document.getElementById('cassette-title-tag');
+    const stickerInput = document.getElementById('cassette-title-input');
+
+    sticker?.addEventListener('click', () => {
+        stickerTag?.classList.add('hidden');
+        stickerInput?.classList.remove('hidden');
+        stickerInput.value = state.title;
+        stickerInput?.focus();
+    });
+
+    stickerInput?.addEventListener('blur', () => finishStickerEdit());
+    stickerInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') finishStickerEdit();
+        if (e.key === 'Escape') {
+            stickerInput?.classList.add('hidden');
+            stickerTag?.classList.remove('hidden');
+        }
+    });
+
     // Keyboard
     document.addEventListener('keydown', handleKeyboard);
+}
+
+function finishStickerEdit() {
+    const stickerTag = document.getElementById('cassette-title-tag');
+    const stickerInput = document.getElementById('cassette-title-input');
+    if (!stickerInput || stickerInput.classList.contains('hidden')) return;
+
+    const newTitle = stickerInput.value.trim() || 'Untitled Mix';
+    state.title = newTitle;
+    localStorage.setItem('74min_title', newTitle);
+
+    stickerInput.classList.add('hidden');
+    stickerTag.classList.remove('hidden');
+
+    import('./ui.js').then(m => {
+        m.updateUI();
+        m.animateLabelWriting(newTitle);
+    });
 }
 
 // --- Specific Handlers ---
