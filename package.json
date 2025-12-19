@@ -4,8 +4,12 @@
   "description": "74min Music Playlist Manager",
   "main": "index.html",
   "scripts": {
-    "build": "node scripts/generate-config.js"
+    "build": "node scripts/generate-config.js",
+    "test": "playwright test"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
 }
