@@ -955,9 +955,8 @@ body.light-mode .cd-container {
     /* アクセントカラーを適用して視認性向上 */
     border: 1px solid rgba(0, 242, 255, 0.2);
     /* アクセントカラーのボーダー */
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
     cursor: pointer;
     margin-right: 1.5rem;
     /* 間隔を少し広げる */
@@ -965,8 +964,7 @@ body.light-mode .cd-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.6;
-    /* 通常時は少し透過させることで「目立たせない」 */
+    opacity: 0.8;
 }
 
 .btn-subtle:hover {
