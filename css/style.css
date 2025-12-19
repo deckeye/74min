@@ -159,348 +159,285 @@ body {
     letter-spacing: 0.1em;
 }
 
-/* --- Cassette Visual --- */
-/* --- Cassette Visual --- */
-.cassette-body {
+/* --- Cassette Visual (ISO Standard / AXIA Design) --- */
+.cassette-tape {
     width: 480px;
+    /* 100.4mm * 4.78px/mm ≈ 480px */
     height: 310px;
-    background: linear-gradient(135deg, #1a1a1f 0%, #101014 100%);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    perspective: 1200px;
+}
+
+.cassette-shell {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #121214 0%, #1a1a1e 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
-        0 30px 60px rgba(0, 0, 0, 0.9),
-        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        0 40px 80px rgba(0, 0, 0, 0.9),
+        inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 15px;
-    overflow: hidden;
 }
 
-/* Screws */
-.cassette-screw {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    background: radial-gradient(circle at 30% 30%, #555, #111);
-    border-radius: 50%;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.cassette-screw::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 10%;
-    right: 10%;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.2);
-    transform: rotate(45deg);
-}
-
-.screw-tl {
-    top: 20px;
-    left: 20px;
-}
-
-.screw-tr {
-    top: 20px;
-    right: 20px;
-}
-
-.screw-bl {
-    bottom: 75px;
-    left: 20px;
-}
-
-/* Above the port area */
-.screw-br {
-    bottom: 75px;
-    right: 20px;
-}
-
-/* Technical Holes */
-.cassette-capstan-hole,
-.cassette-pin-hole {
-    position: absolute;
-    background: #050505;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
-    z-index: 2;
-}
-
-.cassette-capstan-hole {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    bottom: 85px;
-}
-
-.hole-left {
-    left: calc(50% - 78px);
-    /* 156px spacing */
-}
-
-.hole-right {
-    right: calc(50% - 78px);
-}
-
-.cassette-pin-hole {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    bottom: 88px;
-}
-
-.pin-left {
-    left: 45px;
-}
-
-.pin-right {
-    right: 45px;
-}
-
+/* AXIA Large Window */
 .cassette-window {
-    flex: 1;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 8px;
-    margin: 35px 25px 5px;
-    position: relative;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    box-shadow:
-        inset 0 10px 20px rgba(0, 0, 0, 0.5),
-        0 1px 0 rgba(255, 255, 255, 0.05);
-    border: 2px solid #000;
-}
-
-.cassette-reel {
-    width: 110px;
-    height: 110px;
-    background: radial-gradient(circle at center,
-            #555 0%, #222 60%, #1a1a1a 100%);
-    border: 8px solid #000;
-    border-radius: 50%;
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 35px;
+    left: 25px;
+    right: 25px;
+    height: 160px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    backdrop-filter: blur(4px) brightness(1.2);
+    box-shadow: inset 0 5px 15px rgba(0, 0, 0, 0.5);
+    z-index: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-.reel-left {
-    left: 85px;
+/* Precise Reel Positions (ISO) */
+.tape-reel {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 120px;
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.reel-right {
-    right: 85px;
+.tape-reel.left {
+    left: 78.4px;
+    /* Center at 138.4px (240 - 101.6) */
 }
 
-.reel-hub {
-    width: 35px;
-    height: 35px;
-    background: #e0e0e0;
+.tape-reel.right {
+    right: 78.4px;
+    /* Center at 341.6px (240 + 101.6) */
+}
+
+/* AXIA 3-Slit Hub */
+.tape-hub {
+    width: 44px;
+    height: 44px;
+    background: #e5e5e5;
     border-radius: 50%;
     position: relative;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 3;
 }
 
-/* Realistic Hub Teeth */
-.reel-hub::before,
-.reel-hub::after {
+/* AXIA Hub Teeth (3 slits = 6 teeth) */
+.tape-hub span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 5px;
+    background: #111;
+    transform-origin: center;
+    z-index: 4;
+}
+
+.tape-hub span:nth-child(1) {
+    transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.tape-hub span:nth-child(2) {
+    transform: translate(-50%, -50%) rotate(60deg);
+}
+
+.tape-hub::before {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
     width: 100%;
-    height: 4px;
-    background: #bbb;
+    height: 5px;
+    background: #111;
+    transform: translate(-50%, -50%) rotate(120deg);
+    z-index: 4;
+}
+
+/* Hub Center Hole */
+.tape-hub::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    background: #000;
+    border-radius: 50%;
     transform: translate(-50%, -50%);
+    z-index: 5;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2);
 }
 
-.reel-hub::after {
-    transform: translate(-50%, -50%) rotate(60deg);
+.tape-spool {
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    background: radial-gradient(circle, #222 30%, #080808 70%);
+    border-radius: 50%;
+    border: 2px solid #000;
+    z-index: 2;
+    opacity: 0.9;
 }
 
-.reel-hub::before {
-    transform: translate(-50%, -50%) rotate(-60deg);
+/* Rotation Animation */
+.playing .tape-reel {
+    animation: rotate-spool 4s linear infinite;
 }
 
-.playing .cassette-reel {
-    animation: spin 5s linear infinite;
+@keyframes rotate-spool {
+    from {
+        transform: translateY(-50%) rotate(0deg);
+    }
+
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
 }
 
+/* AXIA Label */
 .cassette-label {
-    height: 75px;
-    background: linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 100%);
-    border-radius: 4px;
+    margin: 200px 20px 0;
+    height: 85px;
+    background: linear-gradient(135deg, #1a1a1e 0%, #2a2a2e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 5px solid var(--accent-primary);
+    padding: 10px 20px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 30px;
-    margin: 5px 15px 10px;
-    border: 1px solid #999;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+}
+
+.cassette-label::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 60px;
+    height: 2px;
+    background: var(--accent-secondary);
+    box-shadow: 0 0 10px var(--accent-secondary);
 }
 
 .cassette-label .handwritten {
-    color: #111;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
+    color: #fff;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    margin: 0;
 }
 
-.cassette-brand {
-    color: #444;
-    font-weight: 800;
+.cassette-label .time-label {
     font-size: 0.8rem;
-    font-style: italic;
+    font-weight: 800;
+    color: var(--accent-primary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
-.cassette-bottom-port {
-    height: 65px;
-    background: #111;
-    margin: 0 -15px -15px;
-    border-top: 2px solid #000;
-    clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+/* ISO Technical Holes */
+.cassette-technical-holes .hole {
+    position: absolute;
+    background: #000;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 1), 0 1px 0 rgba(255, 255, 255, 0.1);
+    z-index: 3;
+}
+
+/* Capstan Holes: X=±158.2px, Y=248px */
+.cassette-technical-holes .hole:nth-child(1) {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    left: 81.8px;
+    top: 248px;
+}
+
+.cassette-technical-holes .hole:nth-child(2) {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    right: 81.8px;
+    top: 248px;
+}
+
+/* Guide Pin Holes: X=±198.4px, Y=248px */
+.cassette-technical-holes .hole:nth-child(3) {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    left: 41.6px;
+    top: 248px;
+}
+
+.cassette-technical-holes .hole:nth-child(4) {
+    /* if we had a 4th in HTML */
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    right: 41.6px;
+    top: 248px;
+}
+
+/* CD Visual Fix (Accidental overwrite recovery) */
+.cd-disc {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
     position: relative;
+    background:
+        radial-gradient(circle at 50% 50%, transparent 18%, rgba(255, 255, 255, 0.1) 19%, rgba(0, 0, 0, 0) 20%),
+        conic-gradient(from 0deg, #eaeaea, #ffffff, #dcdcdc, #ffffff, #eaeaea);
+    box-shadow:
+        0 10px 50px rgba(0, 0, 0, 0.5),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.2);
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    padding-top: 10px;
+    align-items: center;
 }
 
-.cassette-head-access {
-    width: 60%;
-    height: 25px;
-    background: #050505;
-    border-radius: 2px;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9);
-    position: relative;
-}
-
-.cassette-head-access::before,
-.cassette-head-access::after {
-    content: '';
+.cd-surface {
     position: absolute;
-    top: 0;
-    width: 30px;
-    height: 100%;
-    background: #080808;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.cassette-head-access::before {
-    left: -40px;
-}
-
-.cassette-head-access::after {
-    right: -40px;
+    top: 2%;
+    left: 2%;
+    right: 2%;
+    bottom: 2%;
+    border-radius: 50%;
+    background: conic-gradient(from 180deg,
+            transparent 0%,
+            rgba(0, 255, 255, 0.1) 10%,
+            rgba(255, 0, 255, 0.1) 20%,
+            transparent 30%,
+            rgba(255, 255, 0, 0.1) 40%,
+            transparent 50%,
+            rgba(0, 255, 255, 0.1) 60%,
+            rgba(255, 0, 255, 0.1) 70%,
+            transparent 80%,
+            rgba(255, 255, 255, 0.2) 90%,
+            transparent 100%);
+    mix-blend-mode: overlay;
+    pointer-events: none;
 }
 
 /* --- Media Control Panels --- */
-.cd-controls-panel {
-    position: absolute;
-    bottom: -80px;
-    width: 320px;
-    background: linear-gradient(180deg, #2a2a2e 0%, #1a1a1e 100%);
-    border: 2px solid #3a3a3e;
-    border-radius: 12px;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.cd-display {
-    background: #000;
-    border: 1px solid #444;
-    padding: 5px 10px;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-    font-family: 'Courier New', Courier, monospace;
-    color: var(--accent-primary);
-    text-shadow: 0 0 5px var(--accent-primary);
-    font-size: 0.9rem;
-}
-
-.cd-buttons,
-.cassette-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-}
-
-.cd-btn,
-.cass-btn {
-    background: linear-gradient(180deg, #444, #222);
-    border: 1px solid #555;
-    color: #eee;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.cd-btn:hover,
-.cass-btn:hover {
-    background: linear-gradient(180deg, #555, #333);
-    border-color: #777;
-    transform: translateY(-1px);
-}
-
-.cd-btn:active,
-.cass-btn:active {
-    transform: translateY(1px);
-    box-shadow: none;
-}
-
-.btn-play {
-    color: var(--accent-primary);
-}
-
+.cd-controls-panel,
 .cassette-controls-panel {
-    position: absolute;
-    bottom: -100px;
-    width: 350px;
-    background: #111;
-    border-top: 5px solid #222;
-    border-bottom: 5px solid #000;
-    padding: 20px 10px;
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.cass-btn {
-    width: 60px;
-    height: 35px;
-    border-radius: 4px;
-    font-weight: bold;
-    font-size: 0.8rem;
-    background: #2a2a2a;
-    border: 2px solid #3a3a3a;
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.1), 0 3px 0 #000;
-}
-
-.cass-btn:active {
-    transform: translateY(3px);
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.1), 0 0 0 #000;
+    z-index: 10;
 }
 
 /* --- Pomodoro Visual --- */

@@ -41,12 +41,50 @@
                 <div class="cd-container" id="cd-visual">
                     <!-- CD Structure -->
                     <div class="cd-disc media-element" id="cd-element">
-                        <div class="cd-surface"></div>
-                        <div class="cd-label">
-                            <span class="handwritten" id="playlist-title">Untitled Mix</span>
-                            <span class="time-label" id="cd-time-tag">74min</span>
+                        <div class="cd-shell">
+                            <div class="cd-surface"></div>
+                            <div class="cd-label">
+                                <span class="handwritten" id="playlist-title">Untitled Mix</span>
+                                <span class="time-label" id="cd-time-tag">74min</span>
+                            </div>
+                            <div class="cd-hole"></div>
+                            <div class="cd-technical-holes">
+                                <div class="hole"></div>
+                                <div class="hole"></div>
+                            </div>
                         </div>
-                        <div class="cd-hole"></div>
+                    </div>
+
+                    <!-- Cassette Visual (ISO Standard / AXIA Design) -->
+                    <div class="cassette-tape media-element hidden" id="cassette-element">
+                        <div class="cassette-shell">
+                            <div class="cassette-window">
+                                <div class="tape-reel left">
+                                    <div class="tape-spool"></div>
+                                    <div class="tape-hub">
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                                <div class="tape-reel right">
+                                    <div class="tape-spool"></div>
+                                    <div class="tape-hub">
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="cassette-label">
+                                <span class="handwritten" id="cassette-title-tag">Untitled Mix</span>
+                                <span class="time-label" id="cassette-time-tag">C-60</span>
+                            </div>
+                            <div class="cassette-technical-holes">
+                                <div class="hole"></div>
+                                <div class="hole"></div>
+                                <div class="hole"></div>
+                                <div class="hole"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- CD Control Panel -->
@@ -63,38 +101,6 @@
                         </div>
                     </div>
 
-                    <!-- Cassette Structure -->
-                    <div class="cassette-body media-element hidden" id="cassette-element">
-                        <div class="cassette-screw screw-tl"></div>
-                        <div class="cassette-screw screw-tr"></div>
-                        <div class="cassette-screw screw-bl"></div>
-                        <div class="cassette-screw screw-br"></div>
-
-                        <!-- Technical Holes -->
-                        <div class="cassette-capstan-hole hole-left"></div>
-                        <div class="cassette-capstan-hole hole-right"></div>
-                        <div class="cassette-pin-hole pin-left"></div>
-                        <div class="cassette-pin-hole pin-right"></div>
-
-                        <div class="cassette-window">
-                            <div class="cassette-reel reel-left">
-                                <div class="reel-hub"></div>
-                            </div>
-                            <div class="cassette-reel reel-right">
-                                <div class="reel-hub"></div>
-                            </div>
-                            <div class="tape-remains" id="tape-visual"></div>
-                        </div>
-                        <div class="cassette-label">
-                            <span class="handwritten" id="cassette-title-tag">Untitled Mix</span>
-                            <span class="cassette-brand" id="cassette-time-tag">C-74</span>
-                        </div>
-                        <div class="cassette-bottom-port">
-                            <div class="cassette-head-access"></div>
-                        </div>
-                    </div>
-
-                    <!-- Cassette Control Panel -->
                     <div class="cassette-controls-panel media-element hidden" id="cassette-controls">
                         <div class="cassette-buttons">
                             <button id="cass-rew" class="cass-btn" title="Rewind">◄◄</button>

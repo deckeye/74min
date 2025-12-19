@@ -100,6 +100,7 @@ class AddTrackCommand {
         state.tracks.push(this.track);
         state.totalTime += this.track.duration;
         renderTrackList();
+        updateUI();
     }
     async undo() {
         const index = state.tracks.indexOf(this.track);
@@ -111,6 +112,7 @@ class AddTrackCommand {
             await updateTrackSoftDelete(this.track.id, true);
         }
         renderTrackList();
+        updateUI();
     }
 }
 
@@ -128,6 +130,7 @@ class DeleteTrackCommand {
             await updateTrackSoftDelete(this.track.id, true);
         }
         renderTrackList();
+        updateUI();
     }
     async undo() {
         state.tracks.splice(this.index, 0, this.track);
@@ -136,6 +139,7 @@ class DeleteTrackCommand {
             await updateTrackSoftDelete(this.track.id, false);
         }
         renderTrackList();
+        updateUI();
     }
 }
 
@@ -151,6 +155,7 @@ class ClearAllCommand {
             await softDeleteAllTracks(state.currentPlaylistId);
         }
         renderTrackList();
+        updateUI();
     }
     async undo() {
         state.tracks = [...this.previousTracks];
@@ -159,11 +164,12 @@ class ClearAllCommand {
             await restoreAllTracks(state.currentPlaylistId);
         }
         renderTrackList();
+        updateUI();
     }
 }
 // --------------------------------------
 
-// Mock Data (fallback if Supabase not configured)
+// Mock Data
 const MOCK_TRACKS = [
     { title: "Midnight City", artist: "M83", duration: 243, service: "YT" },
     { title: "Get Lucky", artist: "Daft Punk", duration: 369, service: "SP" },
@@ -177,6 +183,7 @@ const MOCK_TRACKS = [
 // DOM Elements
 const cdVisual = document.getElementById('cd-visual');
 const cdDisc = document.querySelector('.cd-disc');
+const cassElement = document.getElementById('cassette-element');
 const timelineBar = document.getElementById('timeline-bar');
 const currentTimeEl = document.getElementById('current-time');
 const playlistTitle = document.getElementById('playlist-title');
@@ -219,55 +226,28 @@ const DATABASE_TRACKS = [
 async function init() {
     console.log('🚀 init() started');
     try {
-        // Attempt to load config dynamically to prevent crash if missing
         try {
-            console.log('📂 Attempting to load config.js...');
             const configModule = await import('./config.js');
             CONFIG = configModule.CONFIG;
-            console.log('✅ config.js loaded successfully');
         } catch (configError) {
-            console.warn('⚠️ config.js not found or failed to load. Using fallback/mock mode.', configError);
+            console.warn('⚠️ config.js not found.');
         }
 
         updateUI();
-        console.log('📊 UI Updated');
 
-        // Event Listeners
         if (undoBtn) undoBtn.addEventListener('click', () => commandManager.undo());
         if (redoBtn) redoBtn.addEventListener('click', () => commandManager.redo());
-
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', deleteAllTracks);
-            console.log('🔗 Clear All button linked');
-        }
-
-        if (addBtn) {
-            addBtn.addEventListener('click', () => {
-                console.log('➕ Add button clicked');
-                openModal();
-            });
-            console.log('🔗 Add Track button linked');
-        }
-
+        if (clearAllBtn) clearAllBtn.addEventListener('click', deleteAllTracks);
+        if (addBtn) addBtn.addEventListener('click', openModal);
         if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', (e) => {
-                if (e.target === modalOverlay) closeModal();
-            });
-        }
+        if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
         if (searchInput) searchInput.addEventListener('input', handleSearch);
         document.addEventListener('mousemove', handleMouseMove);
 
-        // About Modal Events
         if (aboutBtn) aboutBtn.addEventListener('click', openAboutModal);
         if (closeAboutModalBtn) closeAboutModalBtn.addEventListener('click', closeAboutModal);
-        if (aboutModal) {
-            aboutModal.addEventListener('click', (e) => {
-                if (e.target === aboutModal) closeAboutModal();
-            });
-        }
+        if (aboutModal) aboutModal.addEventListener('click', (e) => { if (e.target === aboutModal) closeAboutModal(); });
 
-        // Light Mode Toggle
         const toggleLightBtn = document.getElementById('toggle-light-btn');
         if (toggleLightBtn) {
             toggleLightBtn.addEventListener('click', () => {
@@ -276,21 +256,11 @@ async function init() {
             });
         }
 
-        // Keyboard Shortcuts for Undo/Redo
         document.addEventListener('keydown', (e) => {
             const isCmdOrCtrl = e.ctrlKey || e.metaKey;
             const key = e.key.toLowerCase();
-
-            // Undo: Ctrl+Z
-            if (isCmdOrCtrl && key === 'z' && !e.shiftKey) {
-                e.preventDefault();
-                commandManager.undo();
-            }
-            // Redo: Ctrl+Y or Ctrl+Shift+Z
-            if (isCmdOrCtrl && (key === 'y' || (key === 'z' && e.shiftKey))) {
-                e.preventDefault();
-                commandManager.redo();
-            }
+            if (isCmdOrCtrl && key === 'z' && !e.shiftKey) { e.preventDefault(); commandManager.undo(); }
+            if (isCmdOrCtrl && (key === 'y' || (key === 'z' && e.shiftKey))) { e.preventDefault(); commandManager.redo(); }
         });
 
         if (mediaToggleBtn) {
@@ -301,70 +271,43 @@ async function init() {
             });
         }
 
-        // Secret Trigger: Logo Click for Pomodoro Timer Mode
-        let logoClickSessions = 0;
         if (logoEl) {
+            let logoClickSessions = 0;
             logoEl.addEventListener('click', () => {
                 logoClickSessions++;
                 if (logoClickSessions >= 5) {
-                    alert('SECRET MODE UNLOCKED: Pomodoro Timer Mode');
                     switchMedia('pomodoro');
                     logoClickSessions = 0;
                 }
             });
         }
 
-        // Pomodoro Specific Events
-        if (pomoKnob) {
-            pomoKnob.addEventListener('click', handleKnobClick);
-        }
+        if (pomoKnob) pomoKnob.addEventListener('click', handleKnobClick);
+        if (pomoSoundSelect) pomoSoundSelect.addEventListener('change', (e) => { state.pomodoro.soundType = e.target.value; });
+        if (pomoNightWavesCheck) pomoNightWavesCheck.addEventListener('change', (e) => { state.pomodoro.isAutoNightWaves = e.target.checked; });
 
-        if (pomoSoundSelect) {
-            pomoSoundSelect.addEventListener('change', (e) => {
-                state.pomodoro.soundType = e.target.value;
-            });
-        }
-
-        if (pomoNightWavesCheck) {
-            pomoNightWavesCheck.addEventListener('change', (e) => {
-                state.pomodoro.isAutoNightWaves = e.target.checked;
-            });
-        }
-
-        // CD Controls Logic
+        // Controls
         const cdPlayPause = document.getElementById('cd-play-pause');
         const cdStop = document.getElementById('cd-stop');
         const cdPrev = document.getElementById('cd-prev');
         const cdNext = document.getElementById('cd-next');
-
         if (cdPlayPause) cdPlayPause.addEventListener('click', togglePlay);
         if (cdStop) cdStop.addEventListener('click', stopPlayback);
         if (cdPrev) cdPrev.addEventListener('click', playPrevTrack);
         if (cdNext) cdNext.addEventListener('click', playNextTrack);
 
-        // Cassette Controls Logic
         const cassPlay = document.getElementById('cass-play');
         const cassStop = document.getElementById('cass-stop');
         const cassRew = document.getElementById('cass-rew');
         const cassFF = document.getElementById('cass-ff');
-
         if (cassPlay) cassPlay.addEventListener('click', () => { if (!state.isPlaying) togglePlay(); });
         if (cassStop) cassStop.addEventListener('click', stopPlayback);
         if (cassRew) cassRew.addEventListener('click', playPrevTrack);
         if (cassFF) cassFF.addEventListener('click', playNextTrack);
 
-        // Check Supabase connection
-        if (isSupabaseReady) {
-            console.log('✅ Using Supabase backend');
-            await loadPlaylists();
-        } else {
-            console.log('⚠️ Using mock data (Supabase not configured)');
-        }
-
-        // Initialize YouTube Player
+        if (isSupabaseReady) await loadPlaylists();
         initYouTubePlayer();
 
-        // Atmosphere Setup
         const atmoToggleBtn = document.getElementById('atmo-toggle');
         if (atmoToggleBtn) {
             atmoToggleBtn.addEventListener('click', () => {
@@ -375,83 +318,46 @@ async function init() {
         const savedAtmo = localStorage.getItem('74min_atmo') || 'cyber';
         switchAtmosphere(savedAtmo);
 
-        console.log('✨ Initialization complete');
     } catch (err) {
         console.error('❌ Critical Initialization Error:', err);
-        alert('Application failed to start. Check console for details.');
     }
 }
 
 async function loadPlaylists() {
     const supabase = window.supabaseClient?.client;
     if (!supabase) return;
-
     try {
-        const { data, error } = await supabase
-            .from('playlists')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-        if (error) {
-            console.error('Error loading playlists:', error);
-            return;
-        }
-
-        if (data && data.length > 0) {
-            console.log('Found existing playlist:', data[0]);
-            // Load this playlist's tracks
-            await loadPlaylistTracks(data[0].id);
-        }
-    } catch (err) {
-        console.error('Supabase error:', err);
-    }
+        const { data, error } = await supabase.from('playlists').select('*').order('created_at', { ascending: false }).limit(1);
+        if (!error && data && data.length > 0) await loadPlaylistTracks(data[0].id);
+    } catch (err) { console.error(err); }
 }
 
 async function loadPlaylistTracks(playlistId) {
     const supabase = window.supabaseClient?.client;
     if (!supabase) return;
-
     try {
-        const { data, error } = await supabase
-            .from('tracks')
-            .select('*')
-            .eq('playlist_id', playlistId)
-            .order('position', { ascending: true });
-
-        if (error) {
-            console.error('Error loading tracks:', error);
-            return;
+        const { data, error } = await supabase.from('tracks').select('*').eq('playlist_id', playlistId).order('position', { ascending: true });
+        if (!error) {
+            state.tracks = data.filter(t => !t.is_deleted);
+            state.totalTime = state.tracks.reduce((sum, track) => sum + track.duration, 0);
+            state.currentPlaylistId = playlistId;
+            renderTrackList();
+            updateUI();
         }
-
-        // Populate state with loaded tracks
-        state.tracks = data.filter(t => !t.is_deleted);
-        state.totalTime = state.tracks.reduce((sum, track) => sum + track.duration, 0);
-        state.currentPlaylistId = playlistId;
-
-        renderTrackList();
-        updateUI();
-    } catch (err) {
-        console.error('Error loading tracks:', err);
-    }
+    } catch (err) { console.error(err); }
 }
 
-// Helper to re-render the entire list
 function renderTrackList() {
     trackListEl.innerHTML = '';
     state.tracks.forEach(track => renderTrack(track));
 }
 
 function togglePlay() {
-    if (!state.isPlayerReady) {
-        console.log('Player not ready yet');
-        return;
-    }
-
+    if (!state.isPlayerReady) return;
     state.isPlaying = !state.isPlaying;
     if (state.isPlaying) {
         cdDisc.classList.add('playing');
-        // If nothing is playing, start from the first track
+        if (cassElement) cassElement.classList.add('playing');
         if (state.currentTrackIndex === -1 && state.tracks.length > 0) {
             playTrack(0);
         } else {
@@ -459,73 +365,43 @@ function togglePlay() {
         }
     } else {
         cdDisc.classList.remove('playing');
+        if (cassElement) cassElement.classList.remove('playing');
         state.player.pauseVideo();
     }
+    updateUI();
 }
 
 function initYouTubePlayer() {
-    // Load YouTube IFrame API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    // Global callback for YT API
     window.onYouTubeIframeAPIReady = () => {
-        console.log('📺 YouTube API Ready');
         state.player = new YT.Player('player', {
-            height: '0',
-            width: '0',
-            playerVars: {
-                'playsinline': 1,
-                'controls': 0,
-                'disablekb': 1,
-                'fs': 0,
-                'rel': 0
-            },
+            height: '0', width: '0',
+            playerVars: { 'playsinline': 1, 'controls': 0, 'disablekb': 1, 'fs': 0, 'rel': 0 },
             events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange,
+                'onReady': () => { state.isPlayerReady = true; },
+                'onStateChange': (e) => { if (e.data === 0) playNextTrack(); },
                 'onError': (e) => console.error('YT Player Error:', e)
             }
         });
     };
 }
 
-function onPlayerReady(event) {
-    console.log('📺 YouTube Player Instance Ready');
-    state.isPlayerReady = true;
-}
-
-function onPlayerStateChange(event) {
-    // YT.PlayerState.ENDED = 0
-    if (event.data === 0) {
-        console.log('🎵 Track ended, moving to next');
-        playNextTrack();
-    }
-}
-
 function playTrack(index) {
     if (!state.isPlayerReady || index < 0 || index >= state.tracks.length) return;
-
     const track = state.tracks[index];
     state.currentTrackIndex = index;
-
-    console.log(`🎵 Playing: ${track.title} (${track.service})`);
-
-    // YouTube specific play
     if (track.service === 'YT' && track.id) {
         state.player.loadVideoById(track.id);
         state.isPlaying = true;
         cdDisc.classList.add('playing');
+        if (cassElement) cassElement.classList.add('playing');
         updateMediaSession(track);
     } else {
-        console.warn('Track service not supported for playback yet:', track.service);
-        // Skip to next if not playable
         playNextTrack();
     }
-
-    // Highlight current track in UI (future enhancement)
     updateUI();
 }
 
@@ -533,68 +409,8 @@ function playNextTrack() {
     if (state.currentTrackIndex + 1 < state.tracks.length) {
         playTrack(state.currentTrackIndex + 1);
     } else {
-        console.log('🏁 End of playlist');
-        state.isPlaying = false;
-        state.currentTrackIndex = -1;
-        cdDisc.classList.remove('playing');
-        state.player.stopVideo();
+        stopPlayback();
     }
-}
-
-function updateMediaSession(track) {
-    if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: track.title,
-            artist: track.artist,
-            album: state.title,
-            artwork: [
-                { src: track.thumbnail || 'https://via.placeholder.com/150', sizes: '150x150', type: 'image/png' }
-            ]
-        });
-
-        navigator.mediaSession.setActionHandler('play', () => {
-            state.player.playVideo();
-            state.isPlaying = true;
-            cdDisc.classList.add('playing');
-        });
-        navigator.mediaSession.setActionHandler('pause', () => {
-            state.player.pauseVideo();
-            state.isPlaying = false;
-            cdDisc.classList.remove('playing');
-        });
-        navigator.mediaSession.setActionHandler('previoustrack', () => {
-            if (state.currentTrackIndex > 0) playTrack(state.currentTrackIndex - 1);
-        });
-        navigator.mediaSession.setActionHandler('nexttrack', () => {
-            playNextTrack();
-        });
-    }
-}
-
-async function addRandomTrack() {
-    // Clone the object to ensure unique references
-    const track = { ...MOCK_TRACKS[Math.floor(Math.random() * MOCK_TRACKS.length)] };
-
-    if (state.totalTime + track.duration > state.maxTime) {
-        alert("Disc Full! 74min limit reached.");
-        return;
-    }
-
-    await commandManager.execute(new AddTrackCommand(track));
-    animateCDAction();
-
-    // Auto-play on first track if not playing
-    if (!state.isPlaying) togglePlay();
-}
-
-function stopPlayback() {
-    state.isPlaying = false;
-    state.currentTrackIndex = -1;
-    cdDisc.classList.remove('playing');
-    if (state.player && state.player.stopVideo) {
-        state.player.stopVideo();
-    }
-    updateUI();
 }
 
 function playPrevTrack() {
@@ -605,105 +421,62 @@ function playPrevTrack() {
     }
 }
 
-async function saveTrackToSupabase(track) {
-    const supabase = window.supabaseClient?.client;
-    if (!supabase) return;
+function stopPlayback() {
+    state.isPlaying = false;
+    state.currentTrackIndex = -1;
+    cdDisc.classList.remove('playing');
+    if (cassElement) cassElement.classList.remove('playing');
+    if (state.player && state.player.stopVideo) state.player.stopVideo();
+    updateUI();
+}
 
-    try {
-        // Create playlist if it doesn't exist
-        if (!state.currentPlaylistId) {
-            const { data: playlist, error: playlistError } = await supabase
-                .from('playlists')
-                .insert({
-                    title: state.title,
-                    total_duration: track.duration,
-                    is_public: true
-                })
-                .select()
-                .single();
-
-            if (playlistError) {
-                console.error('Error creating playlist:', playlistError);
-                return;
-            }
-
-            state.currentPlaylistId = playlist.id;
-            console.log('✅ Created playlist:', playlist.id);
-        }
-
-        // Add track to playlist
-        const { data, error } = await supabase
-            .from('tracks')
-            .insert({
-                playlist_id: state.currentPlaylistId,
-                title: track.title,
-                artist: track.artist,
-                duration: track.duration,
-                service: track.service,
-                position: state.tracks.length
-            })
-            .select() // Select the inserted row to get ID
-            .single();
-
-        if (error) {
-            console.error('Error saving track:', error);
-        } else if (data) {
-            track.id = data.id; // Save ID for deletion
-            console.log('✅ Saved track to Supabase, ID:', track.id);
-        }
-
-        // Update playlist total duration
-        await supabase
-            .from('playlists')
-            .update({ total_duration: state.totalTime + track.duration })
-            .eq('id', state.currentPlaylistId);
-
-    } catch (err) {
-        console.error('Supabase error:', err);
+function updateMediaSession(track) {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: track.title, artist: track.artist, album: state.title,
+            artwork: [{ src: track.thumbnail || 'https://via.placeholder.com/150', sizes: '150x150', type: 'image/png' }]
+        });
+        navigator.mediaSession.setActionHandler('play', togglePlay);
+        navigator.mediaSession.setActionHandler('pause', togglePlay);
+        navigator.mediaSession.setActionHandler('previoustrack', playPrevTrack);
+        navigator.mediaSession.setActionHandler('nexttrack', playNextTrack);
     }
 }
 
-
+async function saveTrackToSupabase(track) {
+    const supabase = window.supabaseClient?.client;
+    if (!supabase) return;
+    try {
+        if (!state.currentPlaylistId) {
+            const { data: playlist, error } = await supabase.from('playlists').insert({ title: state.title, total_duration: track.duration, is_public: true }).select().single();
+            if (!error) state.currentPlaylistId = playlist.id;
+        }
+        const { data, error } = await supabase.from('tracks').insert({ playlist_id: state.currentPlaylistId, title: track.title, artist: track.artist, duration: track.duration, service: track.service, position: state.tracks.length }).select().single();
+        if (!error && data) track.id = data.id;
+    } catch (err) { console.error(err); }
+}
 
 async function deleteAllTracks() {
     if (state.tracks.length === 0) return;
-    if (!confirm('Are you sure you want to empty the disc? This will delete all tracks.')) return;
-
-    await commandManager.execute(new ClearAllCommand());
+    if (confirm('Are you sure you want to empty the disc?')) await commandManager.execute(new ClearAllCommand());
 }
 
 async function updateTrackSoftDelete(trackId, isDeleted) {
     const supabase = window.supabaseClient?.client;
     if (!supabase) return;
-    const { error } = await supabase
-        .from('tracks')
-        .update({ is_deleted: isDeleted })
-        .eq('id', trackId);
-    if (error) console.error('Soft delete error:', error);
+    await supabase.from('tracks').update({ is_deleted: isDeleted }).eq('id', trackId);
 }
 
 async function softDeleteAllTracks(playlistId) {
     const supabase = window.supabaseClient?.client;
     if (!supabase) return;
-    const { error } = await supabase
-        .from('tracks')
-        .update({ is_deleted: true })
-        .eq('playlist_id', playlistId);
-    if (error) console.error('Bulk soft delete error:', error);
+    await supabase.from('tracks').update({ is_deleted: true }).eq('playlist_id', playlistId);
 }
 
 async function restoreAllTracks(playlistId) {
     const supabase = window.supabaseClient?.client;
     if (!supabase) return;
-    const { error } = await supabase
-        .from('tracks')
-        .update({ is_deleted: false })
-        .eq('playlist_id', playlistId);
-    if (error) console.error('Bulk restore error:', error);
-}
-
-async function deleteTrack(track) {
-    await commandManager.execute(new DeleteTrackCommand(track));
+    await supabase.from('tracks').update({ is_deleted: false }).eq('playlist_id', playlistId);
 }
 
 function renderTrack(track) {
@@ -715,43 +488,21 @@ function renderTrack(track) {
             <span class="track-meta">${track.artist}</span>
         </div>
         <div class="track-right">
-            <span class="service-tag" style="margin-right:8px; font-size:0.7em; opacity:0.7">${track.service}</span>
+            <span class="service-tag">${track.service}</span>
             <span class="duration">${formatTime(track.duration)}</span>
-            <button class="btn-delete" aria-label="Delete">×</button>
+            <button class="btn-delete">×</button>
         </div>
     `;
-
-    // Attach delete event
-    const deleteBtn = el.querySelector('.btn-delete');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteTrack(track);
-        });
-    }
+    el.querySelector('.btn-delete').addEventListener('click', (e) => { e.stopPropagation(); commandManager.execute(new DeleteTrackCommand(track)); });
     trackListEl.appendChild(el);
     trackListEl.scrollTop = trackListEl.scrollHeight;
 }
 
-function animateCDAction() {
-    if (!cdVisual) return;
-    cdVisual.style.transition = 'transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-    cdVisual.style.transform = 'scale(1.05)';
-    setTimeout(() => {
-        cdVisual.style.transform = 'scale(1)';
-        setTimeout(() => {
-            cdVisual.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
-        }, 100);
-    }, 150);
-}
-
 function handleMouseMove(e) {
     if (!cdVisual) return;
-
     const { innerWidth, innerHeight } = window;
     const x = (e.clientX - innerWidth / 2) / 25;
     const y = (e.clientY - innerHeight / 2) / 25;
-
     cdVisual.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
 }
 
@@ -763,132 +514,61 @@ function formatTime(s) {
 
 function updateUI() {
     const pct = (state.totalTime / state.maxTime) * 100;
-    if (timelineBar) {
-        timelineBar.style.width = `${pct}%`;
-        if (pct > 90) {
-            timelineBar.style.boxShadow = '0 0 15px #ff0055';
-        }
-    }
-
+    if (timelineBar) timelineBar.style.width = `${pct}%`;
     if (currentTimeEl) currentTimeEl.textContent = formatTime(state.totalTime);
-
-    // Update track list activity state
     const trackItems = trackListEl.querySelectorAll('.track-item');
     trackItems.forEach((el, idx) => {
-        if (idx === state.currentTrackIndex) {
-            el.classList.add('active');
-        } else {
-            el.classList.remove('active');
-        }
+        if (idx === state.currentTrackIndex) el.classList.add('active');
+        else el.classList.remove('active');
     });
-
-    // Update Undo/Redo button states
     if (undoBtn) undoBtn.disabled = commandManager.undoStack.length === 0;
     if (redoBtn) redoBtn.disabled = commandManager.redoStack.length === 0;
-
-    // Update Media Labels
     updateMediaDisplays();
-
-    // Update Atmosphere Button
-    const atmoToggleBtn = document.getElementById('atmo-toggle');
-    if (atmoToggleBtn) {
-        atmoToggleBtn.textContent = `Atmo: ${state.atmosphere === 'cyber' ? 'Cyber' : 'Study Desk'}`;
-    }
 }
 
 function updateMediaDisplays() {
     const minLabel = `${Math.floor(state.maxTime / 60)}min`;
-    const cLabel = `C-${Math.floor(state.maxTime / 60)}`;
-
     const cdTimeTag = document.getElementById('cd-time-tag');
     const cassetteTimeTag = document.getElementById('cassette-time-tag');
     const cdTitle = document.getElementById('playlist-title');
     const cassetteTitle = document.getElementById('cassette-title-tag');
 
     if (cdTimeTag) cdTimeTag.textContent = minLabel;
-    if (cassetteTimeTag) cassetteTimeTag.textContent = cLabel;
+    if (cassetteTimeTag) cassetteTimeTag.textContent = minLabel;
     if (cdTitle) cdTitle.textContent = state.title;
     if (cassetteTitle) cassetteTitle.textContent = state.title;
 
-    // CD Control Display
     const cdTrackNumEl = document.getElementById('cd-track-num');
     const cdTrackTimeEl = document.getElementById('cd-track-time');
-    if (cdTrackNumEl) {
-        cdTrackNumEl.textContent = state.currentTrackIndex >= 0
-            ? String(state.currentTrackIndex + 1).padStart(2, '0')
-            : '00';
-    }
-    if (cdTrackTimeEl) {
-        // Here we could show track time, but for now let's show total or current track duration
-        if (state.currentTrackIndex >= 0) {
-            cdTrackTimeEl.textContent = formatTime(state.tracks[state.currentTrackIndex].duration);
-        } else {
-            cdTrackTimeEl.textContent = '00:00';
-        }
-    }
+    if (cdTrackNumEl) cdTrackNumEl.textContent = state.currentTrackIndex >= 0 ? String(state.currentTrackIndex + 1).padStart(2, '0') : '00';
+    if (cdTrackTimeEl) cdTrackTimeEl.textContent = state.currentTrackIndex >= 0 ? formatTime(state.tracks[state.currentTrackIndex].duration) : '00:00';
 
-    // Update Play/Pause button icons
     const cdPlayPauseBtn = document.getElementById('cd-play-pause');
-    if (cdPlayPauseBtn) {
-        cdPlayPauseBtn.textContent = state.isPlaying ? 'Ⅱ' : '▶';
-    }
+    if (cdPlayPauseBtn) cdPlayPauseBtn.textContent = state.isPlaying ? 'Ⅱ' : '▶';
 
-    // Pomodoro Display
     if (state.mediaType === 'pomodoro') {
         const pomoTimeEl = document.getElementById('pomo-time');
         const pomoStatusEl = document.getElementById('pomo-status');
         const remaining = (state.pomodoro.phase === 'work' ? state.pomodoro.workDuration : state.pomodoro.breakDuration) - state.pomodoro.elapsedInPhase;
-
-        if (pomoTimeEl) {
-            if (state.pomodoro.isRadioActive) {
-                pomoTimeEl.textContent = 'LIVE';
-                pomoTimeEl.style.fontSize = '3rem';
-            } else {
-                pomoTimeEl.textContent = formatTime(Math.max(0, remaining));
-                pomoTimeEl.style.fontSize = '4rem';
-            }
-        }
-        if (pomoStatusEl) {
-            pomoStatusEl.textContent = state.pomodoro.isRadioActive ? 'FM IRUKA' : state.pomodoro.phase.toUpperCase();
-        }
+        if (pomoTimeEl) pomoTimeEl.textContent = state.pomodoro.isRadioActive ? 'LIVE' : formatTime(Math.max(0, remaining));
+        if (pomoStatusEl) pomoStatusEl.textContent = state.pomodoro.isRadioActive ? 'FM IRUKA' : state.pomodoro.phase.toUpperCase();
     }
 }
 
 function switchMedia(type) {
-    console.log(`🎬 Switching media to: ${type}`);
     state.mediaType = type;
-
-    // Hide all
     document.querySelectorAll('.media-element').forEach(el => el.classList.add('hidden'));
-
-    // Show selected
-    const elId = `${type}-element`;
-    const targetEl = document.getElementById(elId);
+    const targetEl = document.getElementById(`${type}-element`);
     if (targetEl) targetEl.classList.remove('hidden');
-
-    // Show control panel if it exists
-    const controlsId = `${type}-controls`;
-    const targetControls = document.getElementById(controlsId);
+    const targetControls = document.getElementById(`${type}-controls`);
     if (targetControls) targetControls.classList.remove('hidden');
-
-    // Update button text
-    if (mediaToggleBtn) {
-        const label = type === 'pomodoro' ? 'Pomodoro Timer' : type.toUpperCase();
-        mediaToggleBtn.textContent = `Media: ${label}`;
-    }
-
-    if (type === 'pomodoro') {
-        startPomodoro();
-    } else {
-        stopPomodoro();
-        stopRadio();
-    }
-
+    if (mediaToggleBtn) mediaToggleBtn.textContent = `Media: ${type === 'pomodoro' ? 'Pomodoro' : type.toUpperCase()}`;
+    if (type === 'pomodoro') startPomodoro();
+    else { stopPomodoro(); stopRadio(); }
     updateUI();
 }
 
 function switchAtmosphere(type) {
-    console.log(`🌍 Switching atmosphere to: ${type}`);
     state.atmosphere = type;
     document.body.dataset.atmosphere = type;
     localStorage.setItem('74min_atmo', type);
@@ -896,339 +576,100 @@ function switchAtmosphere(type) {
 }
 
 function startPomodoro() {
-    if (state.pomodoro.timer) clearInterval(state.pomodoro.timer);
+    stopPomodoro();
     state.pomodoro.elapsedInPhase = 0;
     state.pomodoro.timer = setInterval(() => {
         state.pomodoro.elapsedInPhase++;
         const limit = state.pomodoro.phase === 'work' ? state.pomodoro.workDuration : state.pomodoro.breakDuration;
-        if (state.pomodoro.elapsedInPhase >= limit) {
-            handlePhaseSwitch();
-        }
+        if (state.pomodoro.elapsedInPhase >= limit) handlePhaseSwitch();
         updateUI();
     }, 1000);
 }
 
-function stopPomodoro() {
-    if (state.pomodoro.timer) {
-        clearInterval(state.pomodoro.timer);
-        state.pomodoro.timer = null;
-    }
-}
+function stopPomodoro() { if (state.pomodoro.timer) { clearInterval(state.pomodoro.timer); state.pomodoro.timer = null; } }
 
 async function handlePhaseSwitch() {
-    console.log('⏳ Transitioning phase...');
-
-    // Fade out
     await fadeOutAudio();
-
     state.pomodoro.phase = state.pomodoro.phase === 'work' ? 'break' : 'work';
     state.pomodoro.elapsedInPhase = 0;
-
-    // Play SE / Announcement
     playPomodoroSE();
-
     updateUI();
 }
 
 function playPomodoroSE() {
-    const hours = new Date().getHours();
-    const isNightTime = hours >= 22 || hours < 5;
-    const useWaves = state.pomodoro.soundType === 'waves' || (state.pomodoro.isAutoNightWaves && isNightTime);
-
-    if (useWaves) {
-        console.log('🌊 Playing Beach Waves...');
-        // In reality: new Audio('assets/waves.mp3').play();
-    } else {
-        console.log('🔔 Ringing Bell...');
-        // In reality: new Audio('assets/bell.mp3').play();
-    }
-
-    if (state.pomodoro.soundType === 'voice') {
-        // Wait a small bit after the bell/waves to start voice for natural feel
-        setTimeout(() => {
-            playVoiceAnnouncement();
-        }, 1000);
-    }
+    if (state.pomodoro.soundType === 'voice') playVoiceAnnouncement();
 }
 
 function playVoiceAnnouncement() {
     const isBreak = state.pomodoro.phase === 'break';
-    const textJp = isBreak ? "休憩、休憩、休憩時間です" : "作業再開、作業再開の時間ですよ！作業を再開してください";
-    const textEn = isBreak ? "Break time, break time, it's time for a break" : "Work time, work time, please resume your work";
-
-    const msgJp = new SpeechSynthesisUtterance(textJp);
+    const msgJp = new SpeechSynthesisUtterance(isBreak ? "休憩時間です" : "作業を再開してください");
     msgJp.lang = 'ja-JP';
-    const msgEn = new SpeechSynthesisUtterance(textEn);
-    msgEn.lang = 'en-US';
-
     speechSynthesis.speak(msgJp);
-    msgJp.onend = () => speechSynthesis.speak(msgEn);
 }
 
 async function fadeOutAudio() {
-    return new Promise(resolve => {
-        let vol = 1.0;
-        const interval = setInterval(() => {
-            vol -= 0.1;
-            if (vol <= 0) {
-                clearInterval(interval);
-                if (state.isPlaying) state.player.pauseVideo();
-                if (state.pomodoro.isRadioActive) irukaStream.pause();
-                resolve();
-            } else {
-                if (state.isPlaying) state.player.setVolume(vol * 100);
-                if (state.pomodoro.isRadioActive) irukaStream.volume = vol;
-            }
-        }, 100);
-    });
+    if (state.isPlaying) state.player.pauseVideo();
+    if (state.pomodoro.isRadioActive) irukaStream.pause();
 }
 
 function handleKnobClick() {
     knobClickCount++;
-    console.log(`🎛 Knob clicked: ${knobClickCount}`);
-    if (knobClickCount >= 3) {
-        toggleRadio();
-        knobClickCount = 0;
-    }
+    if (knobClickCount >= 3) { toggleRadio(); knobClickCount = 0; }
 }
 
 function toggleRadio() {
     state.pomodoro.isRadioActive = !state.pomodoro.isRadioActive;
-    if (state.pomodoro.isRadioActive) {
-        console.log('📻 FM IRUKA Streaming Start');
-        if (state.isPlaying) togglePlay(); // Stop YT
-        irukaStream.volume = 1.0;
-        irukaStream.play().catch(e => console.error('Radio block:', e));
-    } else {
-        stopRadio();
-    }
+    if (state.pomodoro.isRadioActive) { if (state.isPlaying) togglePlay(); irukaStream.play(); }
+    else stopRadio();
     updateUI();
 }
 
-function stopRadio() {
-    state.pomodoro.isRadioActive = false;
-    irukaStream.pause();
-    irukaStream.currentTime = 0;
-}
+function stopRadio() { state.pomodoro.isRadioActive = false; irukaStream.pause(); }
 
-function openModal() {
-    modalOverlay.classList.remove('hidden');
-    searchInput.focus();
-    renderSearchResults(''); // Show all or empty
-}
+function openModal() { modalOverlay.classList.remove('hidden'); searchInput.focus(); renderSearchResults(''); }
+function closeModal() { modalOverlay.classList.add('hidden'); searchInput.value = ''; }
 
-function closeModal() {
-    modalOverlay.classList.add('hidden');
-    searchInput.value = '';
-}
-
-// Debounce timer
 let searchTimeout;
-
 function handleSearch(e) {
     const query = e.target.value;
-
-    // Clear previous timeout
     if (searchTimeout) clearTimeout(searchTimeout);
-
-    // Debounce API calls (500ms)
-    searchTimeout = setTimeout(() => {
-        if (!query) {
-            renderSearchResults('');
-            return;
-        }
-        searchYouTube(query);
-    }, 500);
+    searchTimeout = setTimeout(() => { if (!query) renderSearchResults(''); else searchYouTube(query); }, 500);
 }
 
 async function searchYouTube(query) {
-    if (!CONFIG.YOUTUBE_API_KEY) {
-        console.warn('No YouTube API Key configured.');
-        // Fallback to mock search
-        renderSearchResults(query.toLowerCase(), true);
-        return;
-    }
-
+    if (!CONFIG.YOUTUBE_API_KEY) { renderSearchResults(query.toLowerCase(), true); return; }
     try {
-        const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${CONFIG.YOUTUBE_API_KEY}`
-        );
-
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error?.message || `API Error: ${response.status}`);
-        }
-
+        const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${CONFIG.YOUTUBE_API_KEY}`);
         const data = await response.json();
-
-        if (!data.items || data.items.length === 0) {
-            renderSearchResultsWithData([]);
-            return;
-        }
-
-        // Convert to internal track format
-        const tracks = data.items.map(item => ({
-            title: decodeHtmlEntities(item.snippet.title),
-            artist: decodeHtmlEntities(item.snippet.channelTitle),
-            duration: 0,
-            id: item.id.videoId,
-            service: 'YT',
-            thumbnail: item.snippet.thumbnails.default.url
-        }));
-
-        // Filter out any results that might not have a videoId
-        const validTracks = tracks.filter(t => t.id);
-
-        if (validTracks.length > 0) {
-            // Fetch details to get duration
-            await fetchTrackDetails(validTracks);
-        }
-
+        const validTracks = (data.items || []).map(item => ({ title: item.snippet.title, artist: item.snippet.channelTitle, duration: 0, id: item.id.videoId, service: 'YT', thumbnail: item.snippet.thumbnails.default.url }));
         renderSearchResultsWithData(validTracks);
-
-    } catch (err) {
-        console.error('YouTube Search Error:', err);
-        searchResultsEl.innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
-    }
-}
-
-function decodeHtmlEntities(text) {
-    if (!text) return '';
-    const textArea = document.createElement('textarea');
-    textArea.innerHTML = text;
-    return textArea.value;
-}
-
-async function fetchTrackDetails(tracks) {
-    const ids = tracks.map(t => t.id).filter(id => id).join(',');
-    if (!ids) return;
-
-    try {
-        const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${CONFIG.YOUTUBE_API_KEY}`
-        );
-
-        if (!response.ok) {
-            console.error('YouTube Videos API error:', response.status);
-            return;
-        }
-
-        const data = await response.json();
-
-        if (!data.items) return;
-
-        // Map duration back to tracks
-        data.items.forEach(item => {
-            const track = tracks.find(t => t.id === item.id);
-            if (track && item.contentDetails) {
-                track.duration = parseISO8601Duration(item.contentDetails.duration);
-            }
-        });
-    } catch (e) {
-        console.error('Details fetch error:', e);
-    }
-}
-
-function parseISO8601Duration(duration) {
-    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-    if (!match) return 0;
-
-    const hours = (parseInt(match[1]) || 0);
-    const minutes = (parseInt(match[2]) || 0);
-    const seconds = (parseInt(match[3]) || 0);
-
-    return hours * 3600 + minutes * 60 + seconds;
+    } catch (err) { console.error(err); }
 }
 
 function renderSearchResultsWithData(tracks) {
-    searchResultsEl.innerHTML = '';
-    if (tracks.length === 0) {
-        searchResultsEl.innerHTML = '<div class="empty-state">No tracks found.</div>';
-        return;
-    }
+    searchResultsEl.innerHTML = tracks.length === 0 ? '<div class="empty-state">No tracks found.</div>' : '';
     tracks.forEach(track => renderResultItem(track));
 }
 
 function renderSearchResults(query, isMock = false) {
-    if (isMock) {
-        // ... existing mock logic ...
-        fallbackMockSearch(query);
-    } else {
-        // Initial state or clear
-        searchResultsEl.innerHTML = '';
-        if (!query) {
-            const recommendations = DATABASE_TRACKS.slice(0, 5);
-            recommendations.forEach(track => renderResultItem(track));
-        }
-    }
+    if (isMock) fallbackMockSearch(query);
+    else { searchResultsEl.innerHTML = ''; if (!query) DATABASE_TRACKS.slice(0, 5).forEach(track => renderResultItem(track)); }
 }
 
 function fallbackMockSearch(query) {
     searchResultsEl.innerHTML = '';
-    const filtered = DATABASE_TRACKS.filter(t =>
-        t.title.toLowerCase().includes(query) ||
-        t.artist.toLowerCase().includes(query)
-    );
-    if (filtered.length === 0) {
-        searchResultsEl.innerHTML = '<div class="empty-state">No tracks found (Mock).</div>';
-        return;
-    }
-    filtered.forEach(track => renderResultItem(track));
+    DATABASE_TRACKS.filter(t => t.title.toLowerCase().includes(query)).forEach(track => renderResultItem(track));
 }
 
 function renderResultItem(track) {
     const el = document.createElement('div');
     el.className = 'result-item';
-
-    // Thumbnail check
-    let iconOrImg = `<span class="service-icon">${track.service || 'MOCK'}</span>`;
-    if (track.thumbnail) {
-        iconOrImg = `<img src="${track.thumbnail}" class="result-thumb" alt="art">`;
-    }
-
-    el.innerHTML = `
-        <div class="result-left">
-            ${iconOrImg}
-            <div class="result-info">
-                <h4>${track.title}</h4>
-                <p>${track.artist} • ${formatTime(track.duration)}</p>
-            </div>
-        </div>
-        <button class="btn-add">+</button>
-    `;
-
-    el.querySelector('.btn-add').addEventListener('click', () => {
-        addTrackFromSearch(track);
-    });
-
+    el.innerHTML = `<div><h4>${track.title}</h4><p>${track.artist}</p></div><button class="btn-add">+</button>`;
+    el.querySelector('.btn-add').addEventListener('click', () => { commandManager.execute(new AddTrackCommand(track)); closeModal(); });
     searchResultsEl.appendChild(el);
 }
 
-async function addTrackFromSearch(trackTemplate) {
-    // Logic similar to addRandomTrack but with specific track
-    const track = { ...trackTemplate };
-
-    if (state.totalTime + track.duration > state.maxTime) {
-        alert("Disc Full! 74min limit reached.");
-        return;
-    }
-
-    await commandManager.execute(new AddTrackCommand(track));
-    animateCDAction();
-
-    // Auto-play checks
-    if (!state.isPlaying) togglePlay();
-
-    closeModal();
-}
-
-function openAboutModal() {
-    console.log('📖 Opening About Modal');
-    if (aboutModal) aboutModal.classList.remove('hidden');
-}
-
-function closeAboutModal() {
-    if (aboutModal) aboutModal.classList.add('hidden');
-}
+function openAboutModal() { if (aboutModal) aboutModal.classList.remove('hidden'); }
+function closeAboutModal() { if (aboutModal) aboutModal.classList.add('hidden'); }
 
 init();
