@@ -80,6 +80,12 @@ function setupEventListeners() {
     document.getElementById('about-btn')?.addEventListener('click', () => document.getElementById('about-modal')?.classList.remove('hidden'));
     document.getElementById('close-about-modal')?.addEventListener('click', () => document.getElementById('about-modal')?.classList.add('hidden'));
 
+    // Search Input
+    const searchInput = document.getElementById('search-input');
+    searchInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleSearch(e.target.value);
+    });
+
     // Sticker Edit
     const sticker = document.getElementById('cassette-sticker');
     const stickerTag = document.getElementById('cassette-title-tag');
@@ -210,6 +216,29 @@ function openSearchModal() {
 
 function closeSearchModal() {
     document.getElementById('search-modal')?.classList.add('hidden');
+    // Clear results
+    const resultsEl = document.getElementById('search-results');
+    if (resultsEl) resultsEl.innerHTML = '<div class="empty-state">Type to search...</div>';
+}
+
+async function handleSearch(query) {
+    if (!query.trim()) return;
+    const resultsEl = document.getElementById('search-results');
+    if (resultsEl) resultsEl.innerHTML = '<div class="loading">Searching...</div>';
+
+    const results = await searchYouTube(query, CONFIG.YOUTUBE_API_KEY);
+
+    import('./ui.js').then(m => {
+        m.renderSearchResults(results, handleSelectResult);
+    });
+}
+
+function handleSelectResult(item) {
+    window.commandManager.execute(new AddTrackCommand(item, () => {
+        renderTrackList(handleDeleteTrack);
+        updateUI();
+    }));
+    closeSearchModal();
 }
 
 function updateMediaSession(track) {

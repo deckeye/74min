@@ -174,3 +174,31 @@ export function renderTrackList(onDeleteCallback) {
     if (trackListEl) trackListEl.innerHTML = '';
     state.tracks.forEach(track => renderTrack(track, onDeleteCallback));
 }
+
+/**
+ * Render search results in the modal
+ */
+export function renderSearchResults(results, onResultClick) {
+    const resultsEl = document.getElementById('search-results');
+    if (!resultsEl) return;
+
+    if (!results || results.length === 0) {
+        resultsEl.innerHTML = '<div class="empty-state">No results found.</div>';
+        return;
+    }
+
+    resultsEl.innerHTML = '';
+    results.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'search-result-item';
+        el.innerHTML = `
+            <img src="${item.thumbnail}" alt="thumb">
+            <div class="result-info">
+                <div class="result-title">${item.title}</div>
+                <div class="result-artist">${item.artist}</div>
+            </div>
+        `;
+        el.addEventListener('click', () => onResultClick(item));
+        resultsEl.appendChild(el);
+    });
+}
