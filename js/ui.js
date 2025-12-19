@@ -31,6 +31,8 @@ export function updateMediaDisplays() {
     const cdPlayPauseBtn = document.getElementById('cd-play-pause');
     if (cdPlayPauseBtn) cdPlayPauseBtn.textContent = state.isPlaying ? 'Ⅱ' : '▶';
 
+    updateVFD();
+
     if (state.mediaType === 'pomodoro') {
         const pomoTimeEl = document.getElementById('pomo-time');
         const pomoStatusEl = document.getElementById('pomo-status');
@@ -129,6 +131,56 @@ export function updateTapePhysics() {
 
     spoolLeft.style.setProperty('--radius', `${leftR}px`);
     spoolRight.style.setProperty('--radius', `${rightR}px`);
+}
+
+/**
+ * Update the glowing VFD display for the Premium Radikase
+ */
+export function updateVFD() {
+    const vfdTrackNum = document.getElementById('vfd-track-num');
+    const vfdTrackTime = document.getElementById('vfd-track-time');
+    const vfdLoop = document.getElementById('vfd-loop-indicator');
+    const vfdMeterL = document.getElementById('vfd-meter-l');
+    const vfdMeterR = document.getElementById('vfd-meter-r');
+
+    if (vfdTrackNum) {
+        vfdTrackNum.textContent = state.currentTrackIndex >= 0 ?
+            String(state.currentTrackIndex + 1).padStart(2, '0') : '01';
+    }
+
+    if (vfdTrackTime) {
+        if (state.currentTrackIndex >= 0 && state.player && state.player.getCurrentTime) {
+            vfdTrackTime.textContent = formatTime(Math.floor(state.player.getCurrentTime()));
+        } else {
+            vfdTrackTime.textContent = '00:00';
+        }
+    }
+
+    if (vfdLoop) {
+        if (state.isLooping) vfdLoop.classList.add('active');
+        else vfdLoop.classList.remove('active');
+    }
+
+    // Dynamic level meter bounce logic
+    if (state.isPlaying && vfdMeterL && vfdMeterR) {
+        const barsL = vfdMeterL.querySelectorAll('span');
+        const barsR = vfdMeterR.querySelectorAll('span');
+
+        barsL.forEach((bar, i) => {
+            const active = Math.random() > (i / barsL.length);
+            bar.style.opacity = active ? '1' : '0.1';
+            bar.style.background = active ? '#00ffc8' : '';
+        });
+        barsR.forEach((bar, i) => {
+            const active = Math.random() > (i / barsR.length);
+            bar.style.opacity = active ? '1' : '0.1';
+            bar.style.background = active ? '#00ffc8' : '';
+        });
+    } else if (vfdMeterL && vfdMeterR) {
+        // Reset meters
+        vfdMeterL.querySelectorAll('span').forEach(s => { s.style.opacity = '0.1'; s.style.background = ''; });
+        vfdMeterR.querySelectorAll('span').forEach(s => { s.style.opacity = '0.1'; s.style.background = ''; });
+    }
 }
 
 /**

@@ -93,27 +93,72 @@
                         </div>
                     </div>
 
-                    <!-- CD Control Panel -->
-                    <div class="cd-controls-panel media-element" id="cd-controls">
-                        <div class="cd-display">
-                            <span id="cd-track-num">01</span>
-                            <span id="cd-track-time">00:00</span>
+                    <!-- Premium Japanese Radikase (Bubble Era) Control Panel -->
+                    <div class="radikase-panel media-element" id="cd-controls">
+                        <div class="vfd-unit">
+                            <div class="vfd-glass">
+                                <div class="vfd-grid"></div>
+                                <div class="vfd-main-display">
+                                    <div class="vfd-label">TRACK</div>
+                                    <div class="vfd-number" id="vfd-track-num">04</div>
+                                    <div class="vfd-status">
+                                        <span id="vfd-loop-indicator" class="vfd-dot">LOOP</span>
+                                        <span class="vfd-dot active">74min</span>
+                                    </div>
+                                    <div class="vfd-time-unit">
+                                        <div class="vfd-time" id="vfd-track-time">03:42</div>
+                                        <div class="vfd-mhz">MHz</div>
+                                    </div>
+                                </div>
+                                <div class="vfd-meters">
+                                    <div class="meter-row">
+                                        <div class="meter-label">LEVEL L</div>
+                                        <div class="meter-bars" id="vfd-meter-l">
+                                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                        </div>
+                                    </div>
+                                    <div class="meter-row">
+                                        <div class="meter-label">LEVEL R</div>
+                                        <div class="meter-bars" id="vfd-meter-r">
+                                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="cd-buttons">
-                            <button id="cd-prev" class="cd-btn" title="Previous">«</button>
-                            <button id="cd-play-pause" class="cd-btn btn-play" title="Play/Pause">▶</button>
-                            <button id="cd-stop" class="cd-btn" title="Stop">■</button>
-                            <button id="cd-next" class="cd-btn" title="Next">»</button>
+
+                        <div class="radikase-controls">
+                            <div class="control-group mode-select">
+                                <button class="btn-tactile active" id="btn-mode-cd">CD</button>
+                                <button class="btn-tactile" id="btn-mode-tape">TAPE</button>
+                            </div>
+
+                            <div class="control-group main-controls">
+                                <button id="cd-prev" class="btn-aluminum btn-round" title="Previous">«</button>
+                                <button id="cd-play-pause" class="btn-aluminum btn-large" title="Play/Pause">▶</button>
+                                <button id="cd-stop" class="btn-aluminum btn-round" title="Stop">■</button>
+                                <button id="cd-next" class="btn-aluminum btn-round" title="Next">»</button>
+                            </div>
+
+                            <div class="control-group tuning">
+                                <div class="knob-container">
+                                    <div class="knob-label">VOLUME</div>
+                                    <div class="knob" id="volume-knob">
+                                        <div class="knob-marker"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="radikase-branding">
+                            <div class="brand-logic">Acoustic Sound System</div>
+                            <div class="model-meta">CDラジカセ MODEL X-1 / MADE IN JAPAN</div>
                         </div>
                     </div>
 
+                    <!-- Cassette specific controls (Hidden or integrated) -->
                     <div class="cassette-controls-panel media-element hidden" id="cassette-controls">
-                        <div class="cassette-buttons">
-                            <button id="cass-rew" class="cass-btn" title="Rewind">◄◄</button>
-                            <button id="cass-play" class="cass-btn btn-play" title="Play">►</button>
-                            <button id="cass-ff" class="cass-btn" title="Fast Forward">►►</button>
-                            <button id="cass-stop" class="cass-btn" title="Stop/Eject">■</button>
-                        </div>
+                        <!-- We will use the unified panel above, but keep the ID for logic compatibility -->
                     </div>
 
                     <!-- Pomodoro Timer Visual -->

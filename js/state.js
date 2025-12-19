@@ -14,6 +14,7 @@ export const state = {
     title: localStorage.getItem('74min_title') || "My Summer Mix",
     mediaType: 'cd', // 'cd' | 'cassette' | 'pomodoro'
     isPlaying: false,
+    isLooping: false,
     currentPlaylistId: null,
     currentTrackIndex: -1,
     player: null,
