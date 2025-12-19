@@ -89,6 +89,12 @@ function setupEventListeners() {
         switchAtmosphere(next);
     });
 
+    // Repeat Toggle
+    document.getElementById('btn-repeat')?.addEventListener('click', () => {
+        state.isLooping = !state.isLooping;
+        updateUI();
+    });
+
     // Modals
     document.getElementById('close-modal')?.addEventListener('click', closeSearchModal);
     document.getElementById('about-btn')?.addEventListener('click', () => document.getElementById('about-modal')?.classList.remove('hidden'));
