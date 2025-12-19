@@ -202,24 +202,64 @@ body {
 }
 
 .screw-tl {
-    top: 12px;
-    left: 12px;
+    top: 20px;
+    left: 20px;
 }
 
 .screw-tr {
-    top: 12px;
-    right: 12px;
+    top: 20px;
+    right: 20px;
 }
 
 .screw-bl {
-    bottom: 65px;
-    left: 12px;
+    bottom: 75px;
+    left: 20px;
 }
 
 /* Above the port area */
 .screw-br {
-    bottom: 65px;
-    right: 12px;
+    bottom: 75px;
+    right: 20px;
+}
+
+/* Technical Holes */
+.cassette-capstan-hole,
+.cassette-pin-hole {
+    position: absolute;
+    background: #050505;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+    z-index: 2;
+}
+
+.cassette-capstan-hole {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    bottom: 85px;
+}
+
+.hole-left {
+    left: calc(50% - 78px);
+    /* 156px spacing */
+}
+
+.hole-right {
+    right: calc(50% - 78px);
+}
+
+.cassette-pin-hole {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    bottom: 88px;
+}
+
+.pin-left {
+    left: 45px;
+}
+
+.pin-right {
+    right: 45px;
 }
 
 .cassette-window {
@@ -238,17 +278,27 @@ body {
 }
 
 .cassette-reel {
-    width: 100px;
-    height: 100px;
+    width: 110px;
+    height: 110px;
     background: radial-gradient(circle at center,
             #555 0%, #222 60%, #1a1a1a 100%);
     border: 8px solid #000;
     border-radius: 50%;
-    position: relative;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     justify-content: center;
     align-items: center;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.reel-left {
+    left: 85px;
+}
+
+.reel-right {
+    right: 85px;
 }
 
 .reel-hub {
@@ -310,11 +360,44 @@ body {
 }
 
 .cassette-bottom-port {
-    height: 50px;
+    height: 65px;
     background: #111;
     margin: 0 -15px -15px;
     border-top: 2px solid #000;
-    clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+    clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 10px;
+}
+
+.cassette-head-access {
+    width: 60%;
+    height: 25px;
+    background: #050505;
+    border-radius: 2px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9);
+    position: relative;
+}
+
+.cassette-head-access::before,
+.cassette-head-access::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 30px;
+    height: 100%;
+    background: #080808;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.cassette-head-access::before {
+    left: -40px;
+}
+
+.cassette-head-access::after {
+    right: -40px;
 }
 
 /* --- Media Control Panels --- */
