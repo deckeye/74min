@@ -181,16 +181,42 @@ body {
 .cassette-shell {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #121214 0%, #1a1a1e 100%);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1a1a1e;
+    /* Matte charcoal */
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow:
-        0 40px 80px rgba(0, 0, 0, 0.9),
-        inset 0 1px 2px rgba(255, 255, 255, 0.05);
+        0 30px 60px rgba(0, 0, 0, 0.8),
+        inset 0 1px 1px rgba(255, 255, 255, 0.02);
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+/* 74 MIN Branding */
+.cassette-branding {
+    position: absolute;
+    top: 25px;
+    left: 30px;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: -2px;
+    line-height: 0.8;
+    pointer-events: none;
+    font-family: var(--font-heading);
+}
+
+.cassette-side-indicator {
+    position: absolute;
+    top: 30px;
+    right: 35px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--accent-primary);
+    letter-spacing: 2px;
+    opacity: 0.6;
 }
 
 /* AXIA Large Window */
@@ -293,28 +319,30 @@ body {
 
 .tape-spool {
     position: absolute;
-    width: 110px;
-    height: 110px;
-    background: radial-gradient(circle, #222 30%, #080808 70%);
+    width: var(--radius, 110px);
+    height: var(--radius, 110px);
+    background: radial-gradient(circle, #080808 30%, #000 70%);
     border-radius: 50%;
-    border: 2px solid #000;
     z-index: 2;
-    opacity: 0.9;
+    opacity: 0.95;
+    transition: width 0.3s ease, height 0.3s ease;
 }
 
 /* Rotation Animation */
 .playing .tape-reel {
-    animation: rotate-spool 4s linear infinite;
+    animation: rotate-spool 4.8s linear infinite;
 }
 
-@keyframes rotate-spool {
-    from {
-        transform: translateY(-50%) rotate(0deg);
-    }
+.playing.reversed .tape-reel {
+    animation-direction: reverse;
+}
 
-    to {
-        transform: translateY(-50%) rotate(360deg);
-    }
+.ffwd .tape-reel {
+    animation: rotate-spool 1s linear infinite;
+}
+
+.rwd .tape-reel {
+    animation: rotate-spool 1s linear infinite reverse;
 }
 
 /* AXIA Label */
