@@ -86,11 +86,14 @@ function setupEventListeners() {
 
 // --- Specific Handlers ---
 
+let progressInterval = null;
+
 function togglePlay() {
     if (!state.isPlayerReady) return;
     if (state.isPlaying) {
         state.player.pauseVideo();
         state.isPlaying = false;
+        if (progressInterval) clearInterval(progressInterval);
     } else {
         if (state.currentTrackIndex === -1 && state.tracks.length > 0) {
             playTrack(0, updateUI, updateMediaSession);
@@ -98,8 +101,21 @@ function togglePlay() {
             state.player.playVideo();
             state.isPlaying = true;
         }
+        startProgressTracking();
     }
     updateUI();
+}
+
+function startProgressTracking() {
+    if (progressInterval) clearInterval(progressInterval);
+    progressInterval = setInterval(() => {
+        if (state.isPlaying && state.player && state.player.getCurrentTime) {
+            // Internal totalTime is sum of previous tracks + current track time
+            const previousTracksDuration = state.tracks.slice(0, state.currentTrackIndex).reduce((acc, t) => acc + t.duration, 0);
+            state.totalTime = previousTracksDuration + state.player.getCurrentTime();
+            updateUI();
+        }
+    }, 500);
 }
 
 function playNextTrack() {
